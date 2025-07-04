@@ -16,6 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role'
     ];
 
     protected $hidden = [
@@ -39,4 +40,9 @@ class User extends Authenticatable
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
+    public function businesses()
+    {
+        return $this->hasMany(Business::class, 'vendor_id');
+    }
+
 }
