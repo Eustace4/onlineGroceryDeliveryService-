@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -24,19 +26,32 @@ class ProductController extends Controller
     // Create product (vendor/admin only)
     public function store(Request $request)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'vendor'])) {
+        $user = Auth::user();
+
+        if (!in_array($user->role, ['admin', 'vendor'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $request->validate([
-            'name' => 'required',
-            'description' => 'nullable',
+            'name' => 'required|string',
+            'description' => 'nullable|string',
             'price' => 'required|numeric',
             'stock' => 'required|integer',
-            'category_id' => 'required|exists:categories,id',
+            'category_name' => 'required|string',
             'business_id' => 'required|exists:businesses,id',
             'image' => 'nullable|image|max:2048',
         ]);
+
+        // Check vendor owns the business
+        if ($user->role === 'vendor' && !$user->businesses()->where('id', $request->business_id)->exists()) {
+            return response()->json(['message' => 'You do not own this business'], 403);
+        }
+
+        // Find category by name
+        $category = Category::where('name', $request->category_name)->first();
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
 
         // Handle image upload
         $imagePath = null;
@@ -44,12 +59,13 @@ class ProductController extends Controller
             $imagePath = $request->file('image')->store('product_images', 'public');
         }
 
+        // Create product
         $product = Product::create([
             'name' => $request->name,
             'description' => $request->description,
             'price' => $request->price,
             'stock' => $request->stock,
-            'category_id' => $request->category_id,
+            'category_id' => $category->id,
             'business_id' => $request->business_id,
             'image' => $imagePath,
         ]);
@@ -57,43 +73,51 @@ class ProductController extends Controller
         return response()->json(['message' => 'Product created', 'product' => $product], 201);
     }
 
-    // Update product
+
     public function update(Request $request, $id)
     {
         $user = Auth::user();
         $product = Product::findOrFail($id);
 
-        // ✅ Role-based ownership check
-        if (
-            $user->role === 'vendor' &&
-            $user->business->id !== $product->business_id
-        ) {
+        // Check vendor owns the business the product belongs to
+        if ($user->role === 'vendor' && !$user->businesses()->where('id', $product->business_id)->exists()) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $request->validate([
-            'name'        => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'sometimes|numeric',
-            'stock'       => 'sometimes|integer',
-            'category_id' => 'sometimes|exists:categories,id',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'price' => 'sometimes|numeric',
+            'stock' => 'sometimes|integer',
+            'category_name' => 'sometimes|string', // If you want to accept category by name for update
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Update image if provided
+        // If category_name is provided, find the category and update category_id
+        if ($request->has('category_name')) {
+            $category = Category::where('name', $request->category_name)->first();
+            if (!$category) {
+                return response()->json(['message' => 'Category not found'], 404);
+            }
+            $product->category_id = $category->id;
+        }
+
+        // Handle image update
         if ($request->hasFile('image')) {
-            // Delete old image
+            // Delete old image if exists
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
-
-            $product->image = $request->file('image')->store('products', 'public');
+            $product->image = $request->file('image')->store('product_images', 'public');
         }
 
-        $product->update($request->except('image'));
+        // Update other fields
+        $product->fill($request->except(['image', 'category_name']));
+        $product->save();
 
         return response()->json(['message' => 'Product updated', 'product' => $product]);
     }
+
 
     // Delete product
     public function destroy($id)
@@ -103,12 +127,11 @@ class ProductController extends Controller
 
         if (
             $user->role === 'vendor' &&
-            $user->business->id !== $product->business_id
+            !$user->businesses()->where('id', $product->business_id)->exists()
         ) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // Delete image if exists
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }

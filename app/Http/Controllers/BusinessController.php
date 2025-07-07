@@ -100,6 +100,17 @@ public function destroy($id)
 
     return response()->json(['message' => 'Business deleted successfully.']);
 }
+// In BusinessController
+public function myBusinesses()
+{
+    $user = Auth::user();
+
+    if ($user->role !== 'vendor') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    return response()->json($user->businesses);
+}
 
 
 }
