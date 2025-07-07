@@ -27,9 +27,26 @@ class OrderController extends Controller
 
         $user = Auth::user();
 
-        // ✅ Create and save address for this order
-        $address = $user->addresses()->create($request->address);
+        $existingAddress = $user->addresses()->where([
+            ['street', $request->address['street']],
+            ['city', $request->address['city']],
+            ['state', $request->address['state']],
+            ['postal_code', $request->address['postal_code']],
+            ['country', $request->address['country']],
+        ])->first();
 
+        if ($existingAddress) {
+            $address = $existingAddress;
+        } else {
+            $address = $user->addresses()->create($request->address);
+        }
+
+        // ✅ Create and save address for this order
+        //$address = $user->addresses()->create($request->address);
+
+        $firstProduct = Product::find($request->items[0]['product_id']);
+        $businessId = $firstProduct->business_id;
+        
         $total = 0;
 
         // ✅ Validate products and calculate total
@@ -49,6 +66,7 @@ class OrderController extends Controller
             'address_id' => $address->id,
             'total' => $total,
             'status' => 'pending',
+            'business_id' => $businessId,
         ]);
 
         // ✅ Save order items and reduce stock
@@ -83,11 +101,52 @@ class OrderController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if ($user->role !== 'admin') {
+
+        if ($user->role === 'admin') {
+            $orders = Order::with('items.product', 'address', 'user')->get();
+        } elseif ($user->role === 'vendor') {
+            // Get orders only for the businesses owned by this vendor
+            $orders = Order::with('items.product', 'address', 'user')
+                ->whereHas('business', function($query) use ($user) {
+                    $query->where('vendor_id', $user->id);
+                })
+                ->get();
+        } else {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $orders = Order::with('items.product', 'address', 'user')->get();
         return response()->json($orders);
     }
+
+
+   public function assignRider(Request $request, Order $order)
+    {
+        $request->validate([
+            'rider_id' => 'required|exists:users,id',
+        ]);
+
+        $user = Auth::user();
+
+        // Load the business relationship if not already loaded
+        $order->load('business');
+        
+        // Only admin or the business owner can assign a rider
+        if ($user->role !== 'admin' && $user->id !== $order->business->vendor_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Ensure the selected user is a rider
+        $rider = \App\Models\User::where('id', $request->rider_id)->where('role', 'rider')->first();
+
+        if (!$rider) {
+            return response()->json(['message' => 'Invalid rider ID'], 404);
+        }
+
+        // Assign the rider
+        $order->rider_id = $rider->id;
+        $order->save();
+
+        return response()->json(['message' => 'Rider assigned successfully', 'order' => $order]);
+    }
+
 }

@@ -10,6 +10,8 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RiderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,9 +70,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'myOrders']);
+    Route::post('orders/{order}/assign-rider', [OrderController::class, 'assignRider']);
+
 
     Route::put('/addresses/{id}', [AddressController::class, 'update']);
     Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
     Route::get('/addresses', [AddressController::class, 'index']); // Customer views their addresses
     Route::get('/addresses/{id}', [AddressController::class, 'userAddresses']); // Admin views any user's addresses
+
+    Route::post('/payments', [PaymentController::class, 'store']);
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+
+    Route::get('/rider/orders', [RiderController::class, 'assignedOrders']);
+    Route::put('/rider/orders/{orderId}/update-status', [RiderController::class, 'updateDeliveryStatus']);
+    
 });

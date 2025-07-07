@@ -14,6 +14,7 @@ class Order extends Model
         'address_id',   // add this
         'total',        // update field name to match migration
         'status',
+        'business_id',
     ];
 
     public function user()
@@ -30,4 +31,21 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function rider()
+    {
+        return $this->belongsTo(User::class, 'rider_id');
+    }
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+
 }
