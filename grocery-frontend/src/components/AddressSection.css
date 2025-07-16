@@ -1,0 +1,16 @@
+.address-section {
+  margin-top: 20px;
+}
+
+.address-form textarea,
+.address-form input {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.map-container {
+  margin: 10px 0;
+  border: 1px solid #ccc;
+}

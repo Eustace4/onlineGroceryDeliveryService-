@@ -28,6 +28,10 @@ class AddressController extends Controller
             'state' => 'sometimes|string',
             'postal_code' => 'sometimes|string',
             'country' => 'sometimes|string',
+            'building_name' => 'sometimes|string|nullable',
+            'door_number' => 'sometimes|string|nullable',
+            'latitude' => 'sometimes|numeric|nullable',
+            'longitude' => 'sometimes|numeric|nullable',
         ]);
 
         $address->update($request->all());
@@ -80,5 +84,34 @@ class AddressController extends Controller
 
         return response()->json($addresses);
     }
+    public function store(Request $request)
+    {
+        $request->validate([
+            'street' => 'required|string|max:255',
+            'building_name' => 'nullable|string|max:255',
+            'door_number' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        $address = $request->user()->addresses()->create([
+            'street' => $request->street,
+            'building_name' => $request->building_name,
+            'door_number' => $request->door_number,
+            'city' => $request->city,
+            'state' => $request->state,
+            'postal_code' => $request->postal_code,
+            'country' => $request->country,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ]);
+
+        return response()->json($address, 201);
+    }
+
 
 }

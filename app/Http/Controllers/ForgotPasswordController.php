@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\CustomResetPassword;
 use App\Models\User;
 
 class ForgotPasswordController extends Controller
@@ -15,12 +16,19 @@ class ForgotPasswordController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $status = Password::sendResetLink($request->only('email'));
+        $user = User::where('email', $request->email)->first();
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Reset link sent to your email.'])
-            : response()->json(['message' => 'Unable to send reset link.'], 500);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $token = app('auth.password.broker')->createToken($user);
+
+        $user->notify(new CustomResetPassword($token, $user->email));
+
+        return response()->json(['message' => 'Reset password link sent to your email.']);
     }
+
 
     // Step 2: Reset password using token
     public function reset(Request $request)

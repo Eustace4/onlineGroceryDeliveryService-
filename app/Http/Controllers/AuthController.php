@@ -49,10 +49,11 @@ class AuthController extends Controller
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
-        ]);
+        return response()->json([
+            'message' => 'Incorrect email or password.'
+        ], 401);
     }
+
 
     // Optional: revoke existing tokens to force single-session login
     // $user->tokens()->delete();
@@ -73,9 +74,13 @@ class AuthController extends Controller
 }
     public function profile(Request $request)
     {
-        return response()->json([
-            'user' => $request->user()
-        ]);
+        $user = $request->user();
+
+        $user->profile_picture = $user->profile_picture 
+            ? asset('storage/' . $user->profile_picture)
+            : null;
+
+        return response()->json(['user' => $user]);
     }
 
     public function logout(Request $request)

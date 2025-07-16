@@ -12,6 +12,9 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RiderController;
+use App\Http\Controllers\AdminController;
+//use App\Http\Controllers\EmailVerificationSendController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +32,8 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'reset']);
 Route::get('/categories', [CategoryController::class, 'index']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Admin analytics/metrics
+    Route::get('/admin/metrics', [App\Http\Controllers\AdminController::class, 'getMetrics']);
 
     //Authcontroller routes
     Route::get('/profile', [AuthController::class, 'profile']);
@@ -47,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-    Route::get('/businesses/{id}/products', [ProductController::class, 'productsByBusiness']);
+    // Route::get('/businesses/{id}/products', [ProductController::class, 'productsByBusiness']); // Disabled for admin view
 
     //BusinessController routes
     Route::post('/businesses', [BusinessController::class, 'store']);
@@ -55,13 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/businesses/{id}', [BusinessController::class, 'show']); // get a business by ID
     Route::put('/businesses/{id}', [BusinessController::class, 'update']);
     Route::delete('/businesses/{id}', [BusinessController::class, 'destroy']);
-
-    //products
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::get('/products/{id}', [ProductController::class, 'show']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{id}', [ProductController::class, 'update']);
-    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    Route::get('/businesses/{id}/products', [App\Http\Controllers\AdminController::class, 'getBusinessProducts']);
 
     //categories
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -84,4 +83,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rider/orders', [RiderController::class, 'assignedOrders']);
     Route::put('/rider/orders/{orderId}/update-status', [RiderController::class, 'updateDeliveryStatus']);
     
+    Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::post('/wishlist', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{product_id}', [WishlistController::class, 'destroy']);
+
+    Route::get('/vendor/businesses', [BusinessController::class, 'myBusinesses']);
+
+    Route::post('/profile/upload-picture', [ProfileController::class, 'uploadProfilePicture']);
+    Route::delete('/profile/remove-picture', [ProfileController::class, 'removeProfilePicture']);
+
+
+    //Route::post('/email/verify/send', [EmailVerificationSendController::class, 'send']);
 });

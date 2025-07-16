@@ -39,4 +39,8 @@ class Business extends Model
         return response()->json($business);
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'business_id');
+    }
 }
