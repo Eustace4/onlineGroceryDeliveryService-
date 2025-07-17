@@ -61,6 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/businesses/{id}', [BusinessController::class, 'update']);
     Route::delete('/businesses/{id}', [BusinessController::class, 'destroy']);
     Route::get('/businesses/{id}/products', [App\Http\Controllers\AdminController::class, 'getBusinessProducts']);
+    // In routes/api.php (move from AdminController if needed)
+    Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessProducts']);
+
 
     //categories
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -70,12 +73,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'myOrders']);
     Route::post('orders/{order}/assign-rider', [OrderController::class, 'assignRider']);
-
+    Route::get('/orders', [OrderController::class, 'index']); 
+    Route::get('/my-orders', [OrderController::class, 'myOrders']);
 
     Route::put('/addresses/{id}', [AddressController::class, 'update']);
     Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
     Route::get('/addresses', [AddressController::class, 'index']); // Customer views their addresses
     Route::get('/addresses/{id}', [AddressController::class, 'userAddresses']); // Admin views any user's addresses
+    Route::post('/addresses', [AddressController::class, 'store']);
+
 
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::get('/payments/{id}', [PaymentController::class, 'show']);

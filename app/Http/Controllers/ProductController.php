@@ -140,4 +140,18 @@ class ProductController extends Controller
 
         return response()->json(['message' => 'Product deleted']);
     }
+    // In ProductController.php
+    public function getBusinessProducts($businessId)
+    {
+        $user = Auth::user();
+
+        // Vendor can only access their own business
+        if ($user->role === 'vendor' && !$user->businesses()->where('id', $businessId)->exists()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $products = Product::where('business_id', $businessId)->with('category')->get();
+        return response()->json($products);
+    }
+
 }

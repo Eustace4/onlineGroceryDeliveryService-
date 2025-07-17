@@ -91,7 +91,7 @@ class AddressController extends Controller
             'building_name' => 'nullable|string|max:255',
             'door_number' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
+            'state' => 'required|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'country' => 'nullable|string|max:100',
             'latitude' => 'nullable|numeric',

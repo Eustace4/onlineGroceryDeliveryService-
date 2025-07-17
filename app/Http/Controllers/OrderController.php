@@ -93,7 +93,7 @@ class OrderController extends Controller
     // Get orders for authenticated user
     public function myOrders()
     {
-        $orders = Order::with('items.product', 'address')->where('user_id', Auth::id())->get();
+        $orders = Order::with('items.product', 'address', 'business')->where('user_id', Auth::id())->get();
         return response()->json($orders);
     }
 

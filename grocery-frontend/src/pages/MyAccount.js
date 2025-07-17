@@ -7,6 +7,7 @@ import {
 import './MyAccount.css';
 import Avatar from '../components/Avatar'; // adjust the path as needed
 import AddressSection from '../components/AddressSection';
+import Orders from '../components/Orders';
 
 
 // Move PasswordInput outside the main component to prevent re-renders
@@ -524,9 +525,9 @@ export default function MyAccount() {
       )}
       {activeTab === 'addresses' && <AddressSection token={token} />}
       {/* Placeholder for other tabs if needed */}
-      {activeTab === 'orders' && <p>Orders section coming soon...</p>}
+      {activeTab === 'orders' && <Orders token={token} />}
       {activeTab === 'wishlist' && <p>Wishlist section coming soon...</p>}
-      </main>
+    </main>
     </div>
   );
 }

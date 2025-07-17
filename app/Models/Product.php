@@ -21,5 +21,10 @@ class Product extends Model
     {
         return $this->belongsTo(Business::class);
     }
+    public function getImageUrlAttribute()
+    {
+        return asset('storage/' . $this->image_path); // Assuming `image_path` is your DB column
+    }
+
 
 }
