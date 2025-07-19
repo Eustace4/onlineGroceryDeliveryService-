@@ -8,37 +8,34 @@ export default function Home() {
   const [showLogoutLoading, setShowLogoutLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
 
     if (!token) {
-        setIsLoggedIn(false);
-        return;
+      setIsLoggedIn(false);
+      return;
     }
 
     fetch('http://localhost:8000/api/profile', {
-        headers: {
+      headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
-        },
+      },
     })
-        .then((res) => {
+      .then((res) => {
         if (!res.ok) throw new Error('Invalid token');
         return res.json();
-        })
-        .then((userData) => {
-        setIsLoggedIn(true); // Backend confirmed login
-        })
-        .catch(() => {
-        // Token is invalid, clean up
+      })
+      .then(() => {
+        setIsLoggedIn(true);
+      })
+      .catch(() => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
         setIsLoggedIn(false);
-        });
-   }, []);
-
+      });
+  }, []);
 
   const handleLogout = () => {
     setShowLogoutLoading(true);
@@ -50,19 +47,19 @@ export default function Home() {
       navigate('/');
     }, 1500);
   };
+
   useEffect(() => {
     const handleScroll = () => {
-        const button = document.querySelector('.back-to-top');
-        if (window.scrollY > 200) {
-          button?.classList.add('show');
-        } else {
-          button?.classList.remove('show');
-        }
+      const button = document.querySelector('.back-to-top');
+      if (window.scrollY > 200) {
+        button?.classList.add('show');
+      } else {
+        button?.classList.remove('show');
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
 
   return (
     <>
@@ -79,12 +76,9 @@ export default function Home() {
           </div>
 
           <div className="user-actions">
-
-            {/* Search icon before wishlist*/}
             <span className="search-icon" onClick={() => setShowSearch(!showSearch)}>
               <FaSearch />
             </span>
-
             <a href="/wishlist">Wishlist</a>
             {isLoggedIn ? (
               <>
@@ -97,7 +91,6 @@ export default function Home() {
                 <Link to="/register">Register</Link>
               </>
             )}
-
             <a href="/cart">Cart (0)</a>
           </div>
         </div>
@@ -118,24 +111,31 @@ export default function Home() {
       </section>
 
       <main className="container">
+        {/* Featured Businesses */}
         <h2 className="section-title">Featured Businesses</h2>
         <div className="categories">
           <div className="category-card">
-            <div className="category-img" style={{ backgroundColor: '#e0f0ff' }}>[GreenFresh Logo]</div>
+            <div className="category-img">
+              <img src={require('../images/vendors/greenfresh.jpg')} alt="GreenFresh" />
+            </div>
             <div className="category-info">
               <h3>GreenFresh Market</h3>
               <a href="/vendor/greenfresh">Visit Store</a>
             </div>
           </div>
           <div className="category-card">
-            <div className="category-img" style={{ backgroundColor: '#ffe6cc' }}>[Nature Basket Logo]</div>
+            <div className="category-img">
+              <img src={require('../images/vendors/naturebasket.jpg')} alt="Nature Basket" style={{width: '100%',height: '180px',objectFit: 'cover',borderRadius: '8px 8px 0 0' }}/>
+            </div>
             <div className="category-info">
               <h3>Nature Basket</h3>
               <a href="/vendor/naturebasket">Visit Store</a>
             </div>
           </div>
           <div className="category-card">
-            <div className="category-img" style={{ backgroundColor: '#fceef5' }}>[Daily Organics Logo]</div>
+            <div className="category-img">
+              <img src={require('../images/vendors/dailyorganics.png')} alt="Daily Organics" />
+            </div>
             <div className="category-info">
               <h3>Daily Organics</h3>
               <a href="/vendor/dailyorganics">Visit Store</a>
@@ -143,83 +143,82 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Featured Products */}
         <h2 className="section-title">Featured Products</h2>
         <div className="products-grid">
           <div className="product-card">
-            <div className="product-image">[Organic Avocados]</div>
+            <div className="product-image">
+              <img src={require('../images/products/avocado.jpg')} alt="Organic Avocados" />
+            </div>
             <h3 className="product-title">Organic Avocados</h3>
             <div className="product-price">$4.99</div>
             <button className="add-to-cart">Add to Cart</button>
           </div>
           <div className="product-card">
-            <div className="product-image">[Whole Grain Bread]</div>
+            <div className="product-image">
+              <img src={require('../images/products/bread.jpg')} alt="Whole Grain Bread" />
+            </div>
             <h3 className="product-title">Whole Grain Bread</h3>
             <div className="product-price">$3.50</div>
             <button className="add-to-cart">Add to Cart</button>
           </div>
           <div className="product-card">
-            <div className="product-image">[Almond Milk]</div>
+            <div className="product-image">
+              <img src={require('../images/products/almond-milk.jpg')} alt="Almond Milk" />
+            </div>
             <h3 className="product-title">Almond Milk</h3>
             <div className="product-price">$2.99</div>
             <button className="add-to-cart">Add to Cart</button>
           </div>
         </div>
-        
-        {/* Latest News / Blog */}
-        <h2 className="section-title">Latest News</h2>
-        <div className="blog-section">
-          <div className="blog-card">
-            <h3>Tips for Choosing Organic</h3>
-            <p>Learn how to pick the best organic items and why they matter.</p>
-            <a href="/blog/organic-tips">Read More</a>
-        </div>
-        <div className="blog-card">
-            <h3>Meet Our Vendors</h3>
-            <p>Explore stories from our trusted vendors and local farms.</p>
-            <a href="/blog/vendors">Read More</a>
-        </div>
-        </div>
 
         {/* Best Sellers */}
+        
         <h2 className="section-title">Best Sellers</h2>
         <div className="products-grid">
-        <div className="product-card">
-            <div className="product-image">[Fresh Bananas]</div>
+          <div className="product-card">
+            <div className="product-image">
+              <img src={require('../images/products/fresh-bananas.jpeg')} alt="Fresh Bananas" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+            </div>
             <h3 className="product-title">Fresh Bananas</h3>
             <div className="product-price">$1.99</div>
             <button className="add-to-cart">Add to Cart</button>
-        </div>
-        <div className="product-card">
-            <div className="product-image">[Free-range Eggs]</div>
+          </div>
+          <div className="product-card">
+            <div className="product-image">
+              <img src={require('../images/products/free-range-eggs.jpg')} alt="Free-range Eggs" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+            </div>
             <h3 className="product-title">Free-range Eggs</h3>
             <div className="product-price">$2.49</div>
             <button className="add-to-cart">Add to Cart</button>
-        </div>
-        <div className="product-card">
-            <div className="product-image">[Organic Honey]</div>
+          </div>
+          <div className="product-card">
+            <div className="product-image">
+              <img src={require('../images/products/organic-honey.jpeg')} alt="Organic Honey" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+            </div>
             <h3 className="product-title">Organic Honey</h3>
             <div className="product-price">$6.00</div>
             <button className="add-to-cart">Add to Cart</button>
+          </div>
         </div>
-        </div>
+
 
         {/* Why Shop With Us */}
         <h2 className="section-title">Why Shop With Us?</h2>
         <div className="why-shop">
-        <div className="shop-benefit">
+          <div className="shop-benefit">
             <h4>✅ Trusted Vendors</h4>
             <p>We partner only with reliable and certified vendors.</p>
-        </div>
-        <div className="shop-benefit">
+          </div>
+          <div className="shop-benefit">
             <h4>🚚 Fast Delivery</h4>
             <p>Quick and reliable delivery service to your doorstep.</p>
-        </div>
-        <div className="shop-benefit">
+          </div>
+          <div className="shop-benefit">
             <h4>🌱 Organic & Fresh</h4>
             <p>Enjoy hand-picked, chemical-free organic groceries.</p>
+          </div>
         </div>
-        </div>
-
       </main>
 
       <footer>
@@ -243,22 +242,18 @@ export default function Home() {
               </ul>
             </div>
           </div>
-
           <div className="copyright">
             <p>© 2025 GroceryHub. All rights reserved.</p>
           </div>
         </div>
       </footer>
-      {/* Back to Top Button */}
-      {typeof window !== 'undefined' && (
-        <button
-            className={`back-to-top ${window.scrollY > 200 ? 'show' : ''}`}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
-            ↑
-        </button>
-        )}
 
+      <button
+        className="back-to-top"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      >
+        ↑
+      </button>
     </>
   );
 }

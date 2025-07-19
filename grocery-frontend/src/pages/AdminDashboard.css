@@ -71,7 +71,7 @@ body {
   padding: 0.875rem 1.5rem;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.7);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.95rem;
@@ -81,13 +81,13 @@ body {
 
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: white;
+  color: rgb(147, 60, 60);
   transform: translateX(4px);
 }
 
 .nav-item.active {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(6, 214, 160, 0.1));
-  color: white;
+  color: rgb(79, 32, 32);
   border-right: 3px solid #10b981;
 }
 

@@ -468,4 +468,21 @@ body {
   font-size: 18px;
   color: #555;
 }
+.phone-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.phone-wrapper .country-code {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+}
+
+.phone-wrapper input[type="tel"] {
+  flex: 1;
+}
+
 

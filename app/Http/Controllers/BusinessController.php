@@ -46,7 +46,16 @@ public function show($id)
 
 public function index()
 {
-    $businesses = Business::all();
+    $user = Auth::user();
+
+    if ($user->role === 'vendor') {
+        $businesses = $user->businesses()->withCount('products')->get();
+    } elseif ($user->role === 'admin') {
+        $businesses = Business::withCount('products')->get(); // Admin sees all
+    } else {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
     return response()->json($businesses);
 }
 
@@ -109,6 +118,8 @@ public function myBusinesses()
     if ($user->role !== 'vendor') {
         return response()->json(['message' => 'Unauthorized'], 403);
     }
+    
+    $businesses = $user->businesses()->select('id', 'name', 'email', 'phone', 'address')->get();
 
     return response()->json($user->businesses);
 }

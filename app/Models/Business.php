@@ -43,4 +43,9 @@ class Business extends Model
     {
         return $this->hasMany(Product::class, 'business_id');
     }
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
 }

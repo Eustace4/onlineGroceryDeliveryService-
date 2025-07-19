@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './ModernAuthStyles.css';
 import logo from '../images/logo.png';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import { isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -23,8 +26,8 @@ export default function Register() {
   const roles = [
     { value: 'customer', label: 'Customer', icon: '👤', description: 'Shop for groceries' },
     { value: 'vendor', label: 'Vendor', icon: '🏪', description: 'Sell products' },
-    { value: 'rider', label: 'Rider', icon: '🚴', description: 'Deliver orders' },
-    { value: 'admin', label: 'Admin', icon: '👑', description: 'Manage platform' }
+    // { value: 'rider', label: 'Rider', icon: '🚴', description: 'Deliver orders' },
+    // { value: 'admin', label: 'Admin', icon: '👑', description: 'Manage platform' }
   ];
 
   const handleChange = (e) => {
@@ -61,6 +64,25 @@ export default function Register() {
 
     if (!form.role) {
       setError('Please select a role');
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone number safely
+    if (!form.phone || !isValidPhoneNumber(form.phone)) {
+      setError('Invalid phone number');
+      setLoading(false);
+      return;
+    }
+
+    let phoneInfo;
+    try {
+      phoneInfo = parsePhoneNumber(form.phone);
+      console.log('Phone country:', phoneInfo.country);
+      console.log('Phone national number:', phoneInfo.nationalNumber);
+    } catch (err) {
+      console.error('Phone parsing error:', err);
+      setError('Invalid phone number format');
       setLoading(false);
       return;
     }
@@ -143,14 +165,15 @@ export default function Register() {
 
             <div className="form-group">
               <label htmlFor="phone">Phone Number</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
+              <PhoneInput
+                country={'tr'} // Turkey is 'tr'
                 value={form.phone}
-                onChange={handleChange}
-                placeholder="Enter your phone number"
-                required
+                onChange={(phone) => setForm({ ...form, phone: phone ? `+${phone}` : '' })}
+                inputProps={{
+                  name: 'phone',
+                  required: true
+                }}
+                inputStyle={{ width: '100%' }}
               />
             </div>
 

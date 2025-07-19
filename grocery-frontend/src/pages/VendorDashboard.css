@@ -187,3 +187,125 @@
   width: 1.25rem;
   height: 1.25rem;
 }
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background-color: white;
+  padding: 1rem 1rem;
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0 1rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  background-color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.75rem;
+}
+
+.sidebar-user-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-user-info .user-email {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Navigation Links */
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: #374151;
+  font-size: 0.95rem;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #ecfdf5;
+  color: #16a34a;
+}
+
+.nav-link.active {
+  background-color: #16a34a;
+  color: white;
+}
+
+.nav-link.active svg {
+  color: white;
+}
+
+.nav-link svg {
+  width: 1rem;
+  height: 1rem;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+/* Logout Button */
+.logout-btn {
+  margin-top: auto;
+  padding: 0.75rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #b91c1c;
+}
+.business-card {
+  background: white;
+  border: 2px solid #e5e7eb; /* Tailwind's gray-200 */
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.business-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.business-card.selected {
+  border-color: #10b981; /* Tailwind's green-500 */
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+

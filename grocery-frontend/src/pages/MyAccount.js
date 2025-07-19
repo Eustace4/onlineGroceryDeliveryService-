@@ -4,7 +4,7 @@ import {
   FaUser, FaBox, FaHeart, FaMapMarkerAlt, FaSignOutAlt,
   FaEye, FaEyeSlash, FaCheck, FaTimes
 } from 'react-icons/fa';
-import './MyAccount.css';
+//import './MyAccount.css';
 import Avatar from '../components/Avatar'; // adjust the path as needed
 import AddressSection from '../components/AddressSection';
 import Orders from '../components/Orders';

@@ -94,6 +94,8 @@ header {
 }
 .hero-content {
     max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
 }
 .hero h1 {
     font-size: 52px;
@@ -111,6 +113,7 @@ header {
     border-radius: 30px;
     font-weight: 500;
     transition: all 0.3s ease;
+    margin: 0 auto; 
 }
 .btn:hover {
     background-color: #3a7320;
@@ -432,3 +435,16 @@ footer {
   background-color: #3a7320;
 }
 
+.product-image img {
+  width: 100%;
+  height: 180px;       /* same fixed height for uniformity */
+  object-fit: cover;   /* keeps aspect ratio, crops overflow */
+  border-radius: 5px;  /* matches product card rounding */
+  display: block;      /* removes bottom gap under img */
+}
+.category-img img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+}

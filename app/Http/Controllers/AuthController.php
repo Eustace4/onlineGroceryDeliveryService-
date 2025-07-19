@@ -74,7 +74,11 @@ class AuthController extends Controller
 }
     public function profile(Request $request)
     {
-        $user = $request->user();
+         $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
 
         $user->profile_picture = $user->profile_picture 
             ? asset('storage/' . $user->profile_picture)
