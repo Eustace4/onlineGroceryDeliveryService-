@@ -20,6 +20,7 @@ class BusinessController extends Controller
         'email' => 'required|email',
         'phone' => 'required|string|max:20',
         'address' => 'required|string|max:255',
+        'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
     $business = auth()->user()->businesses()->create([
@@ -30,8 +31,19 @@ class BusinessController extends Controller
         'vendor_id' => auth()->id(),
     ]);
 
-    return response()->json(['message' => 'Business created successfully', 'business' => $business]);
+    // ✅ Handle logo upload
+    if ($request->hasFile('logo')) {
+        $logoPath = $request->file('logo')->store('business_logos', 'public');
+        $business->logo = $logoPath;
+        $business->save();
+    }
+
+    return response()->json([
+        'message' => 'Business created successfully',
+        'business' => $business
+    ]);
 }
+
 
 public function show($id)
 {
@@ -55,7 +67,13 @@ public function index()
     } else {
         return response()->json(['message' => 'Unauthorized'], 403);
     }
+    //$businesses = Business::withCount('products')->get();
+    return response()->json($businesses);
+}
 
+public function indexForCustomer()
+{
+    $businesses = Business::withCount('products')->get();
     return response()->json($businesses);
 }
 
@@ -78,9 +96,17 @@ public function update(Request $request, $id)
 
     $validated = $request->validate([
         'name' => 'string|max:255',
+        'email' => 'email|nullable',
+        'phone' => 'nullable|string|max:20',
         'address' => 'nullable|string',
-        'phone' => 'nullable|string|max:20',  // Phone allowed to update
+        'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
     ]);
+
+    // Save logo file if present
+    if ($request->hasFile('logo')) {
+        $path = $request->file('logo')->store('logos', 'public');
+        $validated['logo'] = $path;
+    }
 
     $business->update($validated);
 
@@ -121,7 +147,7 @@ public function myBusinesses()
     
     $businesses = $user->businesses()->select('id', 'name', 'email', 'phone', 'address')->get();
 
-    return response()->json($user->businesses);
+    return response()->json($businesses);
 }
 
 

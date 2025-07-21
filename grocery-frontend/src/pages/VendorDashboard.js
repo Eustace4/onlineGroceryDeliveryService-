@@ -12,6 +12,7 @@ import {
 import './MyAccount.css';
 import { useNavigate } from 'react-router-dom';
 
+
 const API_BASE = '/api';
 
 const VendorDashboard = ({ token: propToken }) => {
@@ -22,11 +23,55 @@ const VendorDashboard = ({ token: propToken }) => {
   const [businesses, setBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [error, setError] = useState('');
   const [vendor, setVendor] = useState({ name: '', email: '' });
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingBusinesses, setLoadingBusinesses] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingBusinessId, setEditingBusinessId] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    if (!selectedBusiness || !token) return;
+
+    setLoadingOrders(true);
+    fetch(`${API_BASE}/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        // Filter orders to only show those for the selected business
+        const filtered = data.filter(order => order.business_id === selectedBusiness.id);
+        setOrders(filtered);
+      })
+      .catch(() => setError('Failed to fetch orders.'))
+      .finally(() => setLoadingOrders(false));
+  }, [selectedBusiness, token]);
+
+  useEffect(() => {
+  if (!token) return;
+
+  fetch(`${API_BASE}/users`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    }
+  })
+    .then(res => res.json())
+    .then(data => setUsers(data))
+    .catch(err => console.error('Failed to fetch users'));
+}, [token]);
+
+
+
 
   useEffect(() => {
     if (!token) navigate('/login');
@@ -83,11 +128,61 @@ const VendorDashboard = ({ token: propToken }) => {
       .finally(() => setLoadingProducts(false));
   }, [selectedBusiness, token]);
 
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/categories`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch categories'))
+      .then(data => setCategories(data))
+      .catch(err => console.error(err));
+  }, [token]);
+
+  useEffect(() => {
+    if (!selectedBusiness || !token) return;
+
+    fetch(`/api/businesses/${selectedBusiness.id}/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch orders'))
+      .then(data => setOrders(data))
+      .catch(err => console.error(err));
+  }, [selectedBusiness, token]);
+
+
+
   const totalRevenue = businesses.reduce((sum, b) => sum + (b.revenue || 0), 0);
   const totalProducts = businesses.reduce((sum, b) => sum + (b.products || 0), 0);
 
-  const handleAddProductClick = () => alert('Show Add Product Modal');
-  const handleAddBusinessClick = () => alert('Show Add Business Modal');
+  const handleAddProductClick = () => {
+    setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+    setEditProductMode(false);
+    setEditingProductId(null);
+    setShowProductModal(true);
+  };
+
+  const handleAddBusinessClick = () => setShowBusinessModal(true);
+
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [newBusiness, setNewBusiness] = useState({ name: '', email: '', phone: '', address: '', logo: null });
+
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editProductMode, setEditProductMode] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    stock: '',
+    category_id: '',
+    image: null
+  });
+
 
   const handleDeleteBusiness = async (businessId) => {
     if (!window.confirm('Delete this business?')) return;
@@ -108,6 +203,203 @@ const VendorDashboard = ({ token: propToken }) => {
       alert('Failed to delete business');
     }
   };
+  const handleAddBusiness = async () => {
+    const formData = new FormData();
+    formData.append('name', newBusiness.name);
+    formData.append('email', newBusiness.email);
+    formData.append('phone', newBusiness.phone);
+    formData.append('address', newBusiness.address);
+    if (newBusiness.logo) {
+      formData.append('logo', newBusiness.logo);
+    }
+     if (editMode) {
+        formData.append('_method', 'PUT');
+      }
+
+    const url = editMode
+      ? `${API_BASE}/businesses/${editingBusinessId}`
+      : `${API_BASE}/businesses`;
+
+    const method = 'POST';
+
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Failed to save business');
+      const data = await res.json();
+
+      if (editMode) {
+        setBusinesses(prev => prev.map(b => b.id === editingBusinessId ? data.business : b));
+      } else {
+        setBusinesses(prev => [...prev, data.business]);
+      }
+
+      setShowBusinessModal(false);
+      setEditMode(false);
+      setEditingBusinessId(null);
+      setNewBusiness({ name: '', email: '', phone: '', address: '', logo: null });
+      alert(`Business ${editMode ? 'updated' : 'added'} successfully!`);
+    } catch (err) {
+      alert(`Error ${editMode ? 'updating' : 'adding'} business.`);
+    }
+  };
+  const assignRiderToOrder = async (orderId, riderId) => {
+    if (!riderId) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/orders/${orderId}/assign-rider`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rider_id: riderId })
+      });
+
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+
+      setOrders(prev =>
+        prev.map(order =>
+          order.id === updated.order.id
+            ? { ...order, ...updated.order } // merge instead of replace
+            : order
+        )
+      );
+
+
+      alert('Rider assigned successfully');
+    } catch {
+      alert('Failed to assign rider');
+    }
+  };
+
+
+  const handleAddProduct = async () => {
+    const formData = new FormData();
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+    formData.append('stock', newProduct.stock);
+    formData.append('category_name', newProduct.category_name);
+    formData.append('business_id', selectedBusiness.id); // 👈 business context
+
+    if (newProduct.image) {
+      formData.append('image', newProduct.image);
+    }
+
+    if (editProductMode) {
+      formData.append('_method', 'PUT');
+    }
+
+    const url = editProductMode
+      ? `${API_BASE}/products/${editingProductId}`
+      : `${API_BASE}/products`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Failed to save product');
+      const data = await res.json();
+
+      if (editProductMode) {
+        setProducts(prev => prev.map(p => p.id === editingProductId ? data.product : p));
+      } else {
+        setProducts(prev => [...prev, data.product]);
+      }
+
+      setShowProductModal(false);
+      setEditProductMode(false);
+      setEditingProductId(null);
+      setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+      alert(`Product ${editProductMode ? 'updated' : 'added'} successfully!`);
+    } catch (err) {
+      alert('Error saving product');
+    }
+  };
+  
+  const handleUpdateProduct = async () => {
+    const formData = new FormData();
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+    formData.append('stock', newProduct.stock);
+    formData.append('category_name', newProduct.category_name);
+    formData.append('description', newProduct.description || '');
+    formData.append('business_id', selectedBusiness.id);
+
+    if (newProduct.image) {
+      formData.append('image', newProduct.image);
+    }
+
+    formData.append('_method', 'PUT'); // Tells Laravel to treat it as PUT
+
+    try {
+      const res = await fetch(`${API_BASE}/products/${editingProductId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Failed to update product');
+      const data = await res.json();
+
+      setProducts(prev => prev.map(p => p.id === editingProductId ? data.product : p));
+      setShowProductModal(false);
+      setEditProductMode(false);
+      setEditingProductId(null);
+      setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+
+      alert('Product updated successfully!');
+    } catch (err) {
+      alert('Error updating product.');
+    }
+  };
+
+    const assignRider = async (orderId, riderId) => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/assign-rider`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ rider_id: riderId })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('Rider assigned successfully!');
+          // Optionally refetch orders
+        } else {
+          alert(data.message || 'Failed to assign rider');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error assigning rider');
+      }
+    };
+
+
+
   const [businessStats, setBusinessStats] = useState([]);
 
     useEffect(() => {
@@ -173,24 +465,24 @@ const VendorDashboard = ({ token: propToken }) => {
 
       <main className="myaccount-content">
         {activeTab === 'dashboard' && (
-  <div className="tab-content">
-    <h1>Dashboard</h1>
-    <p>Welcome back! Here's your summary.</p>
-    <div style={{display:'flex', gap:'1rem', marginTop:'1rem'}}>
-      {/* existing summary cards */}
-      <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-        <p>Total Revenue</p>
-        <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>₦{totalRevenue.toLocaleString()}</p>
-      </div>
-      <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-        <p>Total Businesses</p>
-        <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{businesses.length}</p>
-      </div>
-      <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-        <p>Total Products</p>
-        <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{totalProducts}</p>
-      </div>
-    </div>
+        <div className="tab-content">
+          <h1>Dashboard</h1>
+          <p>Welcome back! Here's your summary.</p>
+          <div style={{display:'flex', gap:'1rem', marginTop:'1rem'}}>
+            {/* existing summary cards */}
+            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
+              <p>Total Revenue</p>
+              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>₺{totalRevenue.toLocaleString()}</p>
+            </div>
+            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
+              <p>Total Businesses</p>
+              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{businesses.length}</p>
+            </div>
+            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
+              <p>Total Products</p>
+              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{totalProducts}</p>
+            </div>
+          </div>
 
     {/* ✅ ADD THIS BLOCK BELOW */}
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '2rem' }}>
@@ -208,7 +500,7 @@ const VendorDashboard = ({ token: propToken }) => {
         >
           <h3>{biz.name}</h3>
           <p><strong>Total Orders:</strong> {biz.total_orders}</p>
-          <p><strong>Total Revenue:</strong> ₦{biz.total_revenue.toLocaleString()}</p>
+          <p><strong>Total Revenue:</strong> ₺{biz.total_revenue.toLocaleString()}</p>
         </div>
       ))}
     </div>
@@ -242,14 +534,39 @@ const VendorDashboard = ({ token: propToken }) => {
                       transition: 'box-shadow 0.2s ease',
                     }}
                   >
-                    <h3 style={{marginTop:0, marginBottom:'0.5rem'}}>{b.name}</h3>
+                    {/* ✅ Logo display */}
+                    {b.logo && (
+                      <img
+                        src={`http://localhost:8000/storage/${b.logo}`} // full accessible path
+                        alt={`${b.name} Logo`}
+                        style={{
+                          width: '100%',
+                          height: '150px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginBottom: '0.5rem',
+                        }}
+                      />
+                    )}
+                    <h3 style={{marginTop: 0, marginBottom: '0.5rem'}}>{b.name}</h3>
                     <p><strong>Email:</strong> {b.email}</p>
                     <p><strong>Phone:</strong> {b.phone}</p>
                     <p><strong>Address:</strong> {b.address}</p>
                     <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
                       <button
                         className="edit-btn"
-                        onClick={() => alert(`Edit business ${b.name}`)}
+                        onClick={() => {
+                          setEditMode(true);
+                          setEditingBusinessId(b.id);
+                          setNewBusiness({
+                            name: b.name,
+                            email: b.email,
+                            phone: b.phone,
+                            address: b.address,
+                            logo: null,
+                          });
+                          setShowBusinessModal(true);
+                        }}
                       >
                         Edit
                       </button>
@@ -288,7 +605,7 @@ const VendorDashboard = ({ token: propToken }) => {
                         className="product-image"
                       />
                       <h4 style={{ margin: '0.5rem 0 0.25rem 0' }}>{product.name}</h4>
-                      <p style={{ fontWeight: 'bold' }}>₦{product.price}</p>
+                      <p style={{ fontWeight: 'bold' }}>₺{product.price}</p>
                       <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
                         {product.category?.name}
                       </p>
@@ -307,7 +624,23 @@ const VendorDashboard = ({ token: propToken }) => {
                         </p>
 
                       <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
-                        <button className="edit-btn" onClick={() => alert(`Edit product ${product.name}`)}>Edit</button>
+                        <button
+                          className="edit-btn"
+                          onClick={() => {
+                            setEditProductMode(true);
+                            setEditingProductId(product.id);
+                            setNewProduct({
+                              name: product.name,
+                              price: product.price,
+                              stock: product.stock,
+                              category_id: product.category_id,
+                              image: null
+                            });
+                            setShowProductModal(true);
+                          }}
+                        >
+                          Edit
+                        </button>
                         <button className="delete-btn" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
                       </div>
                     </div>
@@ -317,13 +650,159 @@ const VendorDashboard = ({ token: propToken }) => {
             )}
           </div>
         )}
+        {activeTab === 'orders' && (
+          <div className="tab-content">
+            <h2>Orders for {selectedBusiness?.name}</h2>
+            {loadingOrders ? (
+              <p>Loading orders...</p>
+            ) : orders.length === 0 ? (
+              <p>No orders found for this business.</p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                {orders.map((order, index) => (
+                  <div
+                    key={order.id}
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '10px',
+                      padding: '1rem',
+                      width: '100%',
+                      maxWidth: '500px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                      flex: '1 1 300px'
+                    }}
+                  >
+                    <h3 style={{ marginBottom: '0.5rem' }}>Order #{order.id}</h3>
+                    <p><strong>Customer:</strong> {order.user?.name || 'N/A'}</p>
+                    <p><strong>Status:</strong> {order.status}</p>
+                    <p><strong>Total:</strong> ₺{order.total}</p>
+                    <p><strong>Rider:</strong> {order.rider?.name || 'Unassigned'}</p>
+
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <p><strong>Items:</strong></p>
+                      <ul style={{ paddingLeft: '1rem' }}>
+                        {order.items?.map(item => (
+                          <div key={item.id}>
+                            {item.product?.name || 'Unknown'} × {item.quantity}
+                          </div>
+                        ))}
+                        
+                      </ul>
+                    </div>
+
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>
+                        <strong>Assign Rider:</strong>
+                      </label>
+                      <select
+                        onChange={e => assignRiderToOrder(order.id, e.target.value)}
+                        defaultValue=""
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid #ccc'
+                        }}
+                      >
+                        <option value="">Select Rider</option>
+                        {users.filter(u => u.role === 'rider').map(rider => (
+                          <option key={rider.id} value={rider.id}>{rider.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
 
-        {['orders', 'customers', 'messages', 'settings'].includes(activeTab) && (
+
+
+        {['customers', 'messages', 'settings'].includes(activeTab) && (
           <div className="tab-content">
             <h2 style={{textTransform:'capitalize'}}>{activeTab} section coming soon...</h2>
           </div>
         )}
+
+      {showBusinessModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h2 className="modal-title">{editMode ? 'Edit Business' : 'Add New Business'}</h2>
+            <div className="modal-form">
+              <input type="text" placeholder="Business Name" value={newBusiness.name} onChange={e => setNewBusiness({ ...newBusiness, name: e.target.value })} />
+              <input type="email" placeholder="Email" value={newBusiness.email} onChange={e => setNewBusiness({ ...newBusiness, email: e.target.value })} />
+              <input type="text" placeholder="Phone" value={newBusiness.phone} onChange={e => setNewBusiness({ ...newBusiness, phone: e.target.value })} />
+              <input type="text" placeholder="Address" value={newBusiness.address} onChange={e => setNewBusiness({ ...newBusiness, address: e.target.value })} />
+              <input type="file" accept="image/*" onChange={(e) => setNewBusiness({ ...newBusiness, logo: e.target.files[0] })} />
+
+              <div className="modal-actions">
+                <button className="modal-save" onClick={handleAddBusiness}>
+                  {editMode ? 'Update' : 'Add'}
+                </button>
+                <button
+                  className="modal-cancel"
+                  onClick={() => {
+                    setShowBusinessModal(false);
+                    setEditMode(false);
+                    setEditingBusinessId(null);
+                    setNewBusiness({ name: '', email: '', phone: '', address: '', logo: null });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showProductModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h2 className="modal-title">{editProductMode ? 'Edit Product' : 'Add New Product'}</h2>
+            <div className="modal-form">
+              <input type="text" placeholder="Name" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
+              <input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
+              <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
+                <select
+                  className="custom-select spaced-input"
+                  value={newProduct.category_name}
+                  onChange={(e) => setNewProduct({ ...newProduct, category_name: e.target.value })}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              <input type="file" accept="image/*" onChange={(e) => setNewProduct({ ...newProduct, image: e.target.files[0] })} />
+
+              <div className="modal-actions">
+                <button
+                  className="modal-save"
+                  onClick={editProductMode ? handleUpdateProduct : handleAddProduct}
+                >
+                  {editProductMode ? 'Update' : 'Add'}
+                </button>
+                <button
+                  className="modal-cancel"
+                  onClick={() => {
+                    setShowProductModal(false);
+                    setEditProductMode(false);
+                    setEditingProductId(null);
+                    setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
         {error && <p style={{color:'red', marginTop:'1rem'}}>{error}</p>}
       </main>

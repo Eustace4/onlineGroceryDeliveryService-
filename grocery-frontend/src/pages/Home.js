@@ -3,11 +3,25 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import './Home.css';
 
+
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLogoutLoading, setShowLogoutLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [businesses, setBusinesses] = useState([]);
   const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
+  const [cart, setCart] = useState([]);
+
+
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalItems);
+  };
+
+
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -37,6 +51,11 @@ export default function Home() {
       });
   }, []);
 
+  useEffect(() => {
+    updateCartCount();
+  }, []);
+
+
   const handleLogout = () => {
     setShowLogoutLoading(true);
     setTimeout(() => {
@@ -60,6 +79,79 @@ export default function Home() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+
+    fetch('http://localhost:8000/api/public/businesses', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Fetched businesses:', data);
+        console.log('🚀 businesses API returned:', data);
+
+        // ✅ inspect if it's data or data.data
+        if (Array.isArray(data)) {
+          setBusinesses(data);
+        } else if (Array.isArray(data.data)) {
+          setBusinesses(data.data);
+        } else {
+          setBusinesses([]); // fallback
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch businesses', err);
+        setBusinesses([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Fetched products:', data);
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else if (Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else {
+          setProducts([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch products:', err);
+        setProducts([]);
+      });
+  }, []);
+
+  const handleAddToCart = (product) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
+
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        return [...prevCart, { ...product, quantity: 1 }];
+      }
+    });
+  };
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalItems);
+  }, [cart]);
+
+
+
 
   return (
     <>
@@ -91,7 +183,7 @@ export default function Home() {
                 <Link to="/register">Register</Link>
               </>
             )}
-            <a href="/cart">Cart (0)</a>
+            <a href="/cart">Cart ({cartCount})</a>
           </div>
         </div>
 
@@ -101,7 +193,18 @@ export default function Home() {
           </div>
         )}
       </header>
-
+      {cart.length > 0 && (
+        <div className="cart-panel container">
+          <h3>Your Cart</h3>
+          <ul>
+            {cart.map((item) => (
+              <li key={item.id} style={{ marginBottom: '10px' }}>
+                <strong>{item.name}</strong> — ${item.price} × {item.quantity}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <section className="hero">
         <div className="hero-content">
           <h1>Discover Groceries from Multiple Businesses</h1>
@@ -114,63 +217,50 @@ export default function Home() {
         {/* Featured Businesses */}
         <h2 className="section-title">Featured Businesses</h2>
         <div className="categories">
-          <div className="category-card">
-            <div className="category-img">
-              <img src={require('../images/vendors/greenfresh.jpg')} alt="GreenFresh" />
+          {businesses.map((business) => (
+            <div className="category-card" key={business.id}>
+              <div className="category-img">
+                <img
+                  src={`http://localhost:8000/storage/${business.logo}`}
+                  alt={business.name}
+                  style={{
+                    width: '100%',
+                    height: '180px',
+                    objectFit: 'cover',
+                    borderRadius: '8px 8px 0 0'
+                  }}
+                />
+              </div>
+              <div className="category-info">
+                <h3>{business.name}</h3>
+                <a href={`/vendor/${business.id}`}>Visit Store</a>
+              </div>
             </div>
-            <div className="category-info">
-              <h3>GreenFresh Market</h3>
-              <a href="/vendor/greenfresh">Visit Store</a>
-            </div>
-          </div>
-          <div className="category-card">
-            <div className="category-img">
-              <img src={require('../images/vendors/naturebasket.jpg')} alt="Nature Basket" style={{width: '100%',height: '180px',objectFit: 'cover',borderRadius: '8px 8px 0 0' }}/>
-            </div>
-            <div className="category-info">
-              <h3>Nature Basket</h3>
-              <a href="/vendor/naturebasket">Visit Store</a>
-            </div>
-          </div>
-          <div className="category-card">
-            <div className="category-img">
-              <img src={require('../images/vendors/dailyorganics.png')} alt="Daily Organics" />
-            </div>
-            <div className="category-info">
-              <h3>Daily Organics</h3>
-              <a href="/vendor/dailyorganics">Visit Store</a>
-            </div>
-          </div>
+          ))}
         </div>
+
 
         {/* Featured Products */}
         <h2 className="section-title">Featured Products</h2>
         <div className="products-grid">
-          <div className="product-card">
-            <div className="product-image">
-              <img src={require('../images/products/avocado.jpg')} alt="Organic Avocados" />
+          {products.map((product) => (
+            <div className="product-card" key={product.id}>
+              <div className="product-image">
+                <img
+                  src={`http://localhost:8000/storage/${product.image}`}
+                  alt={product.name}
+                  style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px' }}
+                />
+              </div>
+              <h3 className="product-title">{product.name}</h3>
+              <div className="product-price">${product.price}</div>
+              <button className="add-to-cart" onClick={() => handleAddToCart(product)}>
+                Add to Cart
+              </button>
             </div>
-            <h3 className="product-title">Organic Avocados</h3>
-            <div className="product-price">$4.99</div>
-            <button className="add-to-cart">Add to Cart</button>
-          </div>
-          <div className="product-card">
-            <div className="product-image">
-              <img src={require('../images/products/bread.jpg')} alt="Whole Grain Bread" />
-            </div>
-            <h3 className="product-title">Whole Grain Bread</h3>
-            <div className="product-price">$3.50</div>
-            <button className="add-to-cart">Add to Cart</button>
-          </div>
-          <div className="product-card">
-            <div className="product-image">
-              <img src={require('../images/products/almond-milk.jpg')} alt="Almond Milk" />
-            </div>
-            <h3 className="product-title">Almond Milk</h3>
-            <div className="product-price">$2.99</div>
-            <button className="add-to-cart">Add to Cart</button>
-          </div>
+          ))}
         </div>
+
 
         {/* Best Sellers */}
         
@@ -182,7 +272,20 @@ export default function Home() {
             </div>
             <h3 className="product-title">Fresh Bananas</h3>
             <div className="product-price">$1.99</div>
-            <button className="add-to-cart">Add to Cart</button>
+            <button
+              className="add-to-cart"
+              onClick={() =>
+                handleAddToCart({
+                  id: 'banana123',
+                  name: 'Fresh Bananas',
+                  price: 1.99,
+                  image: 'images/products/fresh-bananas.jpeg',
+                })
+              }
+            >
+              Add to Cart
+            </button>
+
           </div>
           <div className="product-card">
             <div className="product-image">
@@ -190,7 +293,20 @@ export default function Home() {
             </div>
             <h3 className="product-title">Free-range Eggs</h3>
             <div className="product-price">$2.49</div>
-            <button className="add-to-cart">Add to Cart</button>
+            <button
+              className="add-to-cart"
+              onClick={() =>
+                handleAddToCart({
+                  id: 'eggs123',
+                  name: 'Organic Eggs',
+                  price: 3.49,
+                  image: 'images/products/organic-eggs.jpeg',
+                })
+              }
+            >
+              Add to Cart
+            </button>
+
           </div>
           <div className="product-card">
             <div className="product-image">
@@ -198,7 +314,20 @@ export default function Home() {
             </div>
             <h3 className="product-title">Organic Honey</h3>
             <div className="product-price">$6.00</div>
-            <button className="add-to-cart">Add to Cart</button>
+            <button
+              className="add-to-cart"
+              onClick={() =>
+                handleAddToCart({
+                  id: 'honey123',
+                  name: 'Pure Honey',
+                  price: 5.99,
+                  image: 'images/products/pure-honey.jpeg',
+                })
+              }
+            >
+              Add to Cart
+            </button>
+
           </div>
         </div>
 

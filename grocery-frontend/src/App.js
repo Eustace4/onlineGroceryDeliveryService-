@@ -9,7 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import MyAccount from './pages/MyAccount';
-
+import BusinessStore from './pages/BusinessStore';
 // Home page is now the public landing page
 
 function App() {
@@ -22,7 +22,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-         <Route path="/my-account" element={<MyAccount />} />
+        <Route path="/my-account" element={<MyAccount />} />
+        <Route path="/vendor/:businessId" element={<BusinessStore />} />
 
         <Route
           path="/admin"

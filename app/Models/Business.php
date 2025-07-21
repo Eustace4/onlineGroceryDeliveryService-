@@ -16,6 +16,7 @@ class Business extends Model
         'phone',
         'address',
         'vendor_id',
+        'logo',
     ];
 
     public function vendor()

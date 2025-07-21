@@ -121,32 +121,74 @@ class OrderController extends Controller
 
    public function assignRider(Request $request, Order $order)
     {
-        $request->validate([
+            $request->validate([
             'rider_id' => 'required|exists:users,id',
         ]);
 
         $user = Auth::user();
-
-        // Load the business relationship if not already loaded
         $order->load('business');
-        
-        // Only admin or the business owner can assign a rider
+
         if ($user->role !== 'admin' && $user->id !== $order->business->vendor_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Ensure the selected user is a rider
-        $rider = \App\Models\User::where('id', $request->rider_id)->where('role', 'rider')->first();
+        $rider = User::where('id', $request->rider_id)->where('role', 'rider')->first();
 
         if (!$rider) {
             return response()->json(['message' => 'Invalid rider ID'], 404);
         }
 
-        // Assign the rider
         $order->rider_id = $rider->id;
+        $order->status = 'assigned';
         $order->save();
+
+        // ✅ Send notification to rider
+        $rider->notify(new RiderAssignedNotification($order));
 
         return response()->json(['message' => 'Rider assigned successfully', 'order' => $order]);
     }
+
+    public function getBusinessOrders($businessId)
+    {
+        $user = Auth::user();
+
+        // Only vendors who own the business can access its orders
+        if (
+            $user->role === 'vendor' &&
+            !$user->businesses()->where('id', $businessId)->exists()
+        ) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $orders = Order::with('items.product', 'address', 'user', 'rider')
+            ->where('business_id', $businessId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($orders);
+    }
+
+    public function updateStatus(Request $request, $orderId)
+{
+    $request->validate([
+        'status' => 'required|in:pending,assigned,in_transit,delivered,cancelled',
+    ]);
+
+    $user = Auth::user();
+    $order = Order::findOrFail($orderId);
+
+    // Vendor check: only allow update if vendor owns the business
+    if (
+        $user->role === 'vendor' &&
+        !$user->businesses()->where('id', $order->business_id)->exists()
+    ) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $order->status = $request->status;
+    $order->save();
+
+    return response()->json(['message' => 'Order status updated', 'order' => $order]);
+}
 
 }

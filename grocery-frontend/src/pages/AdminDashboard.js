@@ -1141,8 +1141,8 @@ export default function AdminDashboard() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="logo">
-            <span className="logo-icon">🛒</span>
-            <span className="logo-text">PipMart Admin</span>
+            {/*<span className="logo-icon">🛒</span>*/}
+            <span className="logo-text">Grocery delivery Admin</span>
           </div>
         </div>
 

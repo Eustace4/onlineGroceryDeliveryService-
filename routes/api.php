@@ -31,6 +31,8 @@ Route::post('/reset-password', [ForgotPasswordController::class, 'reset']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
 
+Route::get('public/businesses', [BusinessController::class, 'indexForCustomer']); // public
+Route::get('/products', [ProductController::class, 'index']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Admin analytics/metrics
@@ -47,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     // Product controller routes
-    Route::get('/products', [ProductController::class, 'index']);
+    
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
@@ -60,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/businesses/{id}', [BusinessController::class, 'update']);
     Route::delete('/businesses/{id}', [BusinessController::class, 'destroy']);
     // Add this inside your Route::middleware(...) group
-    Route::get('/vendor/businesses', [BusinessController::class, 'myBusinesses']);
+    Route::get('/vendor/businesses', [BusinessController::class, 'indexForVendor']);
 
     
     // Business products - use only one route
@@ -77,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders/{order}/assign-rider', [OrderController::class, 'assignRider']);
     Route::get('/orders', [OrderController::class, 'index']); 
     Route::get('/my-orders', [OrderController::class, 'myOrders']);
+    Route::get('/businesses/{id}/orders', [OrderController::class, 'getBusinessOrders']);
+
 
     // Addresses
     Route::put('/addresses/{id}', [AddressController::class, 'update']);
@@ -97,6 +101,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vendor/businesses', [VendorController::class, 'businesses']);
     Route::get('/vendor/dashboard-summary', [VendorController::class, 'dashboardSummary']);
 
+    Route::get('/notifications', function (Request $request) {
+        return $request->user()->notifications;
+    });
 
     // Profile routes
     Route::post('/profile/upload-picture', [ProfileController::class, 'uploadProfilePicture']);
