@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef} from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import './Home.css';
@@ -12,7 +12,14 @@ export default function Home() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [cartCount, setCartCount] = useState(0);
-  const [cart, setCart] = useState([]);
+  const location = useLocation();
+  const featuredBusinessesRef = useRef(null);
+  
+
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
 
   const updateCartCount = () => {
@@ -24,36 +31,43 @@ export default function Home() {
 
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem('auth_token');
 
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
+  if (!token) {
+    setIsLoggedIn(false);
+    return;
+  }
 
-    fetch('http://localhost:8000/api/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
+  fetch('http://localhost:8000/api/profile', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error('Invalid token');
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Invalid token');
-        return res.json();
-      })
-      .then(() => {
-        setIsLoggedIn(true);
-      })
-      .catch(() => {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        setIsLoggedIn(false);
-      });
-  }, []);
+    .then(() => {
+      setIsLoggedIn(true);
+    })
+    .catch(() => {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      setIsLoggedIn(false);
+    });
+}, [location]); 
 
   useEffect(() => {
-    updateCartCount();
-  }, []);
+    // Load cart from localStorage on component mount
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      const parsedCart = JSON.parse(savedCart);
+      setCart(parsedCart);
+      const totalItems = parsedCart.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(totalItems);
+    }
+  }, []); // Empty dependency array means this runs once on mount
 
 
   const handleLogout = () => {
@@ -139,19 +153,56 @@ export default function Home() {
             : item
         );
       } else {
-        return [...prevCart, { ...product, quantity: 1 }];
+        return [...prevCart, { 
+          ...product, 
+          quantity: 1,
+          price: parseFloat(product.price) // Ensure price is a number
+        }];
       }
     });
   };
-
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+ useEffect(() => {
+    if (cart.length > 0) { // Only save if cart has items
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     setCartCount(totalItems);
   }, [cart]);
 
 
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
+  const increaseQty = (id) => {
+    const updated = cart.map((item) =>
+      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+    );
+    setCart(updated);
+  };
+
+  const decreaseQty = (id) => {
+    const updated = cart
+      .map((item) =>
+        item.id === id && item.quantity > 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+      .filter((item) => item.quantity > 0);
+    setCart(updated);
+  };
+
+  const removeItem = (id) => {
+    const updated = cart.filter((item) => item.id !== id);
+    setCart(updated);
+  };
+
+  const handleStartShopping = () => {
+    featuredBusinessesRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+
+ 
 
   return (
     <>
@@ -183,7 +234,6 @@ export default function Home() {
                 <Link to="/register">Register</Link>
               </>
             )}
-            <a href="/cart">Cart ({cartCount})</a>
           </div>
         </div>
 
@@ -193,7 +243,7 @@ export default function Home() {
           </div>
         )}
       </header>
-      {cart.length > 0 && (
+      {/*{cart.length > 0 && (
         <div className="cart-panel container">
           <h3>Your Cart</h3>
           <ul>
@@ -204,18 +254,18 @@ export default function Home() {
             ))}
           </ul>
         </div>
-      )}
+      )}*/}
       <section className="hero">
         <div className="hero-content">
           <h1>Discover Groceries from Multiple Businesses</h1>
           <p>Shop fresh, organic, and local products from your favorite stores all in one place.</p>
-          <a href="/shop" className="btn">Start Shopping</a>
+          <button className="btn" onClick={handleStartShopping}>Start Shopping</button>
         </div>
       </section>
 
       <main className="container">
         {/* Featured Businesses */}
-        <h2 className="section-title">Featured Businesses</h2>
+        <h2 ref={featuredBusinessesRef} className="section-title">Featured Businesses</h2>
         <div className="categories">
           {businesses.map((business) => (
             <div className="category-card" key={business.id}>
@@ -233,7 +283,7 @@ export default function Home() {
               </div>
               <div className="category-info">
                 <h3>{business.name}</h3>
-                <a href={`/vendor/${business.id}`}>Visit Store</a>
+                <Link to="/business-store" state={{ business }} className="visit-store-btn">Visit Store</Link>
               </div>
             </div>
           ))}
@@ -253,10 +303,8 @@ export default function Home() {
                 />
               </div>
               <h3 className="product-title">{product.name}</h3>
-              <div className="product-price">${product.price}</div>
-              <button className="add-to-cart" onClick={() => handleAddToCart(product)}>
-                Add to Cart
-              </button>
+              <p className="product-description">{product.description}</p>
+              <div className="product-price">${product.price}</div>             
             </div>
           ))}
         </div>
@@ -272,19 +320,6 @@ export default function Home() {
             </div>
             <h3 className="product-title">Fresh Bananas</h3>
             <div className="product-price">$1.99</div>
-            <button
-              className="add-to-cart"
-              onClick={() =>
-                handleAddToCart({
-                  id: 'banana123',
-                  name: 'Fresh Bananas',
-                  price: 1.99,
-                  image: 'images/products/fresh-bananas.jpeg',
-                })
-              }
-            >
-              Add to Cart
-            </button>
 
           </div>
           <div className="product-card">
@@ -293,20 +328,6 @@ export default function Home() {
             </div>
             <h3 className="product-title">Free-range Eggs</h3>
             <div className="product-price">$2.49</div>
-            <button
-              className="add-to-cart"
-              onClick={() =>
-                handleAddToCart({
-                  id: 'eggs123',
-                  name: 'Organic Eggs',
-                  price: 3.49,
-                  image: 'images/products/organic-eggs.jpeg',
-                })
-              }
-            >
-              Add to Cart
-            </button>
-
           </div>
           <div className="product-card">
             <div className="product-image">
@@ -314,20 +335,6 @@ export default function Home() {
             </div>
             <h3 className="product-title">Organic Honey</h3>
             <div className="product-price">$6.00</div>
-            <button
-              className="add-to-cart"
-              onClick={() =>
-                handleAddToCart({
-                  id: 'honey123',
-                  name: 'Pure Honey',
-                  price: 5.99,
-                  image: 'images/products/pure-honey.jpeg',
-                })
-              }
-            >
-              Add to Cart
-            </button>
-
           </div>
         </div>
 
@@ -349,6 +356,57 @@ export default function Home() {
           </div>
         </div>
       </main>
+      <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
+        <div className="cart-header">
+          <h3>Your Cart</h3>
+          <button className="close-cart" onClick={() => setIsCartOpen(false)}>×</button>
+        </div>
+        <div className="cart-items">
+          {cart.length === 0 ? (
+            <p>Your cart is empty.</p>
+          ) : (
+            <>
+              {cart.map((item) => (
+                <div key={item.id} className="cart-item">
+                  <img src={item.image} alt={item.name} />
+                  <div className="item-details">
+                    <p><strong>{item.name}</strong></p>
+                    <p>${parseFloat(item.price).toFixed(2)}</p>
+                    <div className="quantity-controls">
+                      <button onClick={() => decreaseQty(item.id)}>-</button>
+                      <span>{item.quantity}</span>
+                      <button onClick={() => increaseQty(item.id)}>+</button>
+                    </div>
+                    <button className="remove" onClick={() => removeItem(item.id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+
+              {/* ➕ Subtotal and Checkout */}
+              <div className="cart-summary">
+                <p><strong>Subtotal:</strong> ₺{cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0).toFixed(2)}</p>
+                 <button
+                  onClick={() => {
+                    if (!isLoggedIn) {
+                      navigate('/login');
+                      return;
+                    }
+                    navigate('/checkout');
+                  }}
+                  disabled={cart.length === 0}
+                  className="checkout-button"
+                >
+                  Go to Checkout
+                </button>
+              </div>
+             
+            </>
+          )}
+        </div>
+        
+      </div>
+       
+
 
       <footer>
         <div className="container">
@@ -384,5 +442,6 @@ export default function Home() {
         ↑
       </button>
     </>
+    
   );
 }

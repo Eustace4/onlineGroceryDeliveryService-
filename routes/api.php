@@ -33,6 +33,9 @@ Route::get('/categories', [CategoryController::class, 'index']);
 
 Route::get('public/businesses', [BusinessController::class, 'indexForCustomer']); // public
 Route::get('/products', [ProductController::class, 'index']);
+// Add this with your other public routes:
+Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessProducts']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Admin analytics/metrics
@@ -66,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     
     // Business products - use only one route
-    Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessProducts']);
+    //Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessProducts']);
 
     // Categories
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -80,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']); 
     Route::get('/my-orders', [OrderController::class, 'myOrders']);
     Route::get('/businesses/{id}/orders', [OrderController::class, 'getBusinessOrders']);
+    Route::put('/orders/{orderId}/status', [OrderController::class, 'updateStatus']);
 
 
     // Addresses

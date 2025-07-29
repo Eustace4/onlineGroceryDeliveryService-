@@ -79,13 +79,13 @@ body {
 
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: rgb(240, 233, 233);
+  color: rgb(63, 212, 100);
   transform: translateX(4px);
 }
 
 .nav-item.active {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(6, 214, 160, 0.1));
-  color: rgb(235, 233, 233);
+  color: rgb(28, 23, 23);
   border-right: 3px solid #10b981;
 }
 

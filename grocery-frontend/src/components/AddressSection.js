@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../pages/MyAccount.css';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -20,9 +20,22 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
+function MapUpdater({ coords }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (coords && coords[0] && coords[1]) {
+      map.setView(coords, 16);
+    }
+  }, [coords, map]);
+  
+  return null;
+}
+
 export default function AddressSection({ token }) {
   const [addresses, setAddresses] = useState([]);
   const [form, setForm] = useState({
+    label: 'home',
     street: '',
     building_name: '',
     door_number: '',
@@ -33,7 +46,7 @@ export default function AddressSection({ token }) {
     state: '',
     city: '',
   });
-  const [mapCoords, setMapCoords] = useState([6.5244, 3.3792]);
+  const [mapCoords, setMapCoords] = useState([35.1264, 33.4299]);
   const [gpsCoords, setGpsCoords] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -42,20 +55,38 @@ export default function AddressSection({ token }) {
 
   const OPENCAGE_API_KEY = process.env.REACT_APP_OPENCAGE_KEY;
 
+  const fetchAddresses = async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/addresses', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+      
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      
+      const data = await response.json();
+      console.log('Fetched addresses:', data);
+      setAddresses(data);
+      setError('');
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError('Failed to fetch addresses: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch('http://localhost:8000/api/addresses', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      })
-      .then(setAddresses)
-      .catch(() => setError('Failed to fetch addresses'))
-      .finally(() => setLoading(false));
+    fetchAddresses();
   }, [token]);
 
   useEffect(() => {
@@ -79,7 +110,7 @@ export default function AddressSection({ token }) {
               street: formatted,
               latitude: coords[0],
               longitude: coords[1],
-              postal_code: components.postcode || '',
+              postal_code: components.postcode || 'N/A',
               country: components.country || '',
               state: components.state || components.region || '',
               city: components.city || components.town || components.village || '',
@@ -106,7 +137,7 @@ export default function AddressSection({ token }) {
                 ...prev,
                 latitude: location.lat,
                 longitude: location.lng,
-                postal_code: components.postcode || '',
+                postal_code: components.postcode || 'N/A',
                 country: components.country || '',
                 state: components.state || '',
                 city: components.city || components.town || components.village || '',
@@ -138,7 +169,7 @@ export default function AddressSection({ token }) {
         setForm(prev => ({
           ...prev,
           street: formatted,
-          postal_code: components.postcode || '',
+          postal_code: components.postcode || 'N/A',
           country: components.country || '',
           state: components.state || components.region || '',
           city: components.city || components.town || components.village || '',
@@ -154,12 +185,21 @@ export default function AddressSection({ token }) {
   };
 
   const handleSave = async () => {
-    if (!form.street.trim()) return;
+    console.log('Save button clicked'); // Add this
+    console.log('Form data:', form); // Add this
+    
+    if (!form.street.trim()) {
+      console.log('No street address provided'); // Add this
+      alert('Street address is required');
+      return;
+    }
 
     const url = editingId
       ? `http://localhost:8000/api/addresses/${editingId}`
       : 'http://localhost:8000/api/addresses';
     const method = editingId ? 'PUT' : 'POST';
+
+    console.log('Making request:', { url, method, form }); // Add this
 
     try {
       const response = await fetch(url, {
@@ -171,21 +211,27 @@ export default function AddressSection({ token }) {
         body: JSON.stringify(form),
       });
 
+      console.log('Response status:', response.status); // Add this
+      
       const contentType = response.headers.get('Content-Type');
       const data = contentType?.includes('application/json') ? await response.json() : await response.text();
+      
+      console.log('Response data:', data); // Add this
 
-      if (response.ok) {
-        if (editingId) {
-          setAddresses(addresses.map(addr => (addr.id === editingId ? data : addr)));
-        } else {
-          setAddresses([...addresses, data]);
-        }
-        handleCancel();
+      if (response.ok && data) {
+        console.log('Save successful:', data);
+        
+        // Refetch addresses to ensure sync with database
+        await fetchAddresses();
+        
+        handleCancel();     
       } else {
+        console.error('Save failed:', response.status, data); // Add this
         alert(typeof data === 'string' ? data : data.message || 'Failed to save address');
       }
     } catch (err) {
-      alert('Unexpected error while saving address');
+      console.error('Save error:', err); // Add this
+      alert('Unexpected error while saving address: ' + err.message);
     }
   };
 
@@ -202,8 +248,8 @@ export default function AddressSection({ token }) {
       city: address.city || '',
     });
     setMapCoords([
-      parseFloat(address.latitude) || 6.5244,
-      parseFloat(address.longitude) || 3.3792,
+      parseFloat(address.latitude) || 35.1264,
+      parseFloat(address.longitude) || 33.4299,
     ]);
     setEditingId(address.id);
     setShowForm(true);
@@ -216,7 +262,8 @@ export default function AddressSection({ token }) {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
-      setAddresses(addresses.filter((a) => a.id !== id));
+      // Refetch addresses to ensure sync with database
+      await fetchAddresses();
     } else {
       alert('Failed to delete');
     }
@@ -234,7 +281,7 @@ export default function AddressSection({ token }) {
       state: '',
       city: '',
     });
-    setMapCoords(gpsCoords || [6.5244, 3.3792]);
+    setMapCoords(gpsCoords || [35.1264, 33.4299]);
     setEditingId(null);
     setShowForm(false);
   };
@@ -267,6 +314,13 @@ export default function AddressSection({ token }) {
               <label>Street Address</label>
               <input name="street" value={form.street} onChange={handleInputChange} />
 
+              <label>Address Label</label>
+              <select name="label" value={form.label} onChange={handleInputChange}>
+                  <option value="home">🏠 Home</option>
+                  <option value="work">🏢 Work</option>
+                  <option value="other">📍 Other</option>
+              </select>
+
               <label>Building Name</label>
               <input name="building_name" value={form.building_name} onChange={handleInputChange} />
 
@@ -284,6 +338,7 @@ export default function AddressSection({ token }) {
 
             <div className="map-container">
               <MapContainer center={mapCoords} zoom={16} scrollWheelZoom={false} style={{ height: 300, marginTop: 10 }}>
+                <MapUpdater coords={mapCoords} />
                 <TileLayer
                   attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -305,10 +360,10 @@ export default function AddressSection({ token }) {
           <p>No addresses yet.</p>
         ) : (
           <ul className="address-list">
-            {addresses.map((address) => (
-              <li key={address.id} className="address-item">
+            {addresses.map((address, index) => (
+              <li key={address.id || `address-${index}`} className="address-item">
                 <div>
-                  <strong>{safeRender(address.street)}</strong>
+                  <strong>{safeRender(address.label?.toUpperCase())} - {safeRender(address.street)}</strong>
                   <br />
                   {safeRender(address.building_name)}, Door: {safeRender(address.door_number)}
                 </div>

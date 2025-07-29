@@ -10,6 +10,7 @@ import AddressSection from '../components/AddressSection';
 import Orders from '../components/Orders';
 
 
+
 // Move PasswordInput outside the main component to prevent re-renders
 const PasswordInput = ({ value, onChange, placeholder, show, toggleShow }) => (
   <div className="password-input-container" style={{ position: 'relative' }}>

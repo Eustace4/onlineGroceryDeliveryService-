@@ -35,6 +35,13 @@ const VendorDashboard = ({ token: propToken }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [users, setUsers] = useState([]);
+  const [notification, setNotification] = useState({ message: '', type: '' });
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    type: '',   // 'product' or 'business'
+    id: null,   // ID of the item to delete
+  });
+
 
   useEffect(() => {
     if (!selectedBusiness || !token) return;
@@ -57,19 +64,27 @@ const VendorDashboard = ({ token: propToken }) => {
   }, [selectedBusiness, token]);
 
   useEffect(() => {
-  if (!token) return;
+    if (!token) return;
 
-  fetch(`${API_BASE}/users`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json',
+    fetch(`${API_BASE}/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      }
+    })
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(err => console.error('Failed to fetch users'));
+  }, [token]);
+
+  useEffect(() => {
+    if (notification.message) {
+      const timer = setTimeout(() => {
+        setNotification({ message: '', type: '' });
+      }, 3000); // hide after 3 sec
+      return () => clearTimeout(timer);
     }
-  })
-    .then(res => res.json())
-    .then(data => setUsers(data))
-    .catch(err => console.error('Failed to fetch users'));
-}, [token]);
-
+  }, [notification]);
 
 
 
@@ -123,7 +138,7 @@ const VendorDashboard = ({ token: propToken }) => {
       credentials: 'include',
     })
       .then(res => res.ok ? res.json() : Promise.reject('Products fetch failed'))
-      .then(data => setProducts(data))
+      .then(data => setProducts(data.products))
       .catch(() => setError('Failed to fetch products.'))
       .finally(() => setLoadingProducts(false));
   }, [selectedBusiness, token]);
@@ -161,7 +176,7 @@ const VendorDashboard = ({ token: propToken }) => {
   const totalProducts = businesses.reduce((sum, b) => sum + (b.products || 0), 0);
 
   const handleAddProductClick = () => {
-    setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+    setNewProduct({ name: '', price: '', stock: '', description:'', category_id: '', image: null });
     setEditProductMode(false);
     setEditingProductId(null);
     setShowProductModal(true);
@@ -179,30 +194,14 @@ const VendorDashboard = ({ token: propToken }) => {
     name: '',
     price: '',
     stock: '',
+    description: '',
     category_id: '',
     image: null
   });
-
-
-  const handleDeleteBusiness = async (businessId) => {
-    if (!window.confirm('Delete this business?')) return;
-    try {
-      const res = await fetch(`${API_BASE}/businesses/${businessId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error();
-      setBusinesses(prev => prev.filter(b => b.id !== businessId));
-      if (selectedBusiness?.id === businessId) setSelectedBusiness(null);
-      alert('Business deleted successfully');
-    } catch {
-      alert('Failed to delete business');
-    }
+  const openDeleteModal = (type, id) => {
+    setConfirmModal({ show: true, type, id });
   };
+
   const handleAddBusiness = async () => {
     const formData = new FormData();
     formData.append('name', newBusiness.name);
@@ -246,11 +245,16 @@ const VendorDashboard = ({ token: propToken }) => {
       setEditMode(false);
       setEditingBusinessId(null);
       setNewBusiness({ name: '', email: '', phone: '', address: '', logo: null });
-      alert(`Business ${editMode ? 'updated' : 'added'} successfully!`);
+
+      // ✅ Show success notification
+      setNotification({ message: `Business ${editMode ? 'updated' : 'added'} successfully!`, type: 'success' });
+
     } catch (err) {
-      alert(`Error ${editMode ? 'updating' : 'adding'} business.`);
+      // ❌ Show error notification
+      setNotification({ message: `Error ${editMode ? 'updating' : 'adding'} business.`, type: 'error' });
     }
   };
+  
   const assignRiderToOrder = async (orderId, riderId) => {
     if (!riderId) return;
 
@@ -271,15 +275,14 @@ const VendorDashboard = ({ token: propToken }) => {
       setOrders(prev =>
         prev.map(order =>
           order.id === updated.order.id
-            ? { ...order, ...updated.order } // merge instead of replace
+            ? { ...order, ...updated.order }
             : order
         )
       );
 
-
-      alert('Rider assigned successfully');
+      setNotification({ message: 'Rider assigned successfully!', type: 'success' });
     } catch {
-      alert('Failed to assign rider');
+      setNotification({ message: 'Failed to assign rider', type: 'error' });
     }
   };
 
@@ -290,12 +293,11 @@ const VendorDashboard = ({ token: propToken }) => {
     formData.append('price', newProduct.price);
     formData.append('stock', newProduct.stock);
     formData.append('category_name', newProduct.category_name);
-    formData.append('business_id', selectedBusiness.id); // 👈 business context
+    formData.append('business_id', selectedBusiness.id);
 
     if (newProduct.image) {
       formData.append('image', newProduct.image);
     }
-
     if (editProductMode) {
       formData.append('_method', 'PUT');
     }
@@ -327,11 +329,13 @@ const VendorDashboard = ({ token: propToken }) => {
       setEditProductMode(false);
       setEditingProductId(null);
       setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
-      alert(`Product ${editProductMode ? 'updated' : 'added'} successfully!`);
+
+      setNotification({ message: `Product ${editProductMode ? 'updated' : 'added'} successfully!`, type: 'success' });
     } catch (err) {
-      alert('Error saving product');
+      setNotification({ message: 'Error saving product.', type: 'error' });
     }
   };
+
   
   const handleUpdateProduct = async () => {
     const formData = new FormData();
@@ -346,7 +350,7 @@ const VendorDashboard = ({ token: propToken }) => {
       formData.append('image', newProduct.image);
     }
 
-    formData.append('_method', 'PUT'); // Tells Laravel to treat it as PUT
+    formData.append('_method', 'PUT');
 
     try {
       const res = await fetch(`${API_BASE}/products/${editingProductId}`, {
@@ -367,38 +371,11 @@ const VendorDashboard = ({ token: propToken }) => {
       setEditingProductId(null);
       setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
 
-      alert('Product updated successfully!');
+      setNotification({ message: 'Product updated successfully!', type: 'success' });
     } catch (err) {
-      alert('Error updating product.');
+      setNotification({ message: 'Error updating product.', type: 'error' });
     }
   };
-
-    const assignRider = async (orderId, riderId) => {
-      try {
-        const res = await fetch(`/api/orders/${orderId}/assign-rider`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ rider_id: riderId })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          alert('Rider assigned successfully!');
-          // Optionally refetch orders
-        } else {
-          alert(data.message || 'Failed to assign rider');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Error assigning rider');
-      }
-    };
-
-
 
   const [businessStats, setBusinessStats] = useState([]);
 
@@ -416,25 +393,45 @@ const VendorDashboard = ({ token: propToken }) => {
         .catch(err => console.error('Dashboard stats error:', err));
     }, []);
 
+  const confirmDelete = async () => {
+    if (!confirmModal.id) return;
 
-  const handleDeleteProduct = async (productId) => {
-    if (!window.confirm('Delete this product?')) return;
+    const endpoint =
+      confirmModal.type === 'product'
+        ? `${API_BASE}/products/${confirmModal.id}`
+        : `${API_BASE}/businesses/${confirmModal.id}`;
+
     try {
-      const res = await fetch(`${API_BASE}/products/${productId}`, {
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
         credentials: 'include',
       });
+
       if (!res.ok) throw new Error();
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      alert('Product deleted successfully');
+
+      if (confirmModal.type === 'product') {
+        setProducts((prev) => prev.filter((p) => p.id !== confirmModal.id));
+        setNotification({ message: 'Product deleted successfully!', type: 'success' });
+      } else {
+        setBusinesses((prev) => prev.filter((b) => b.id !== confirmModal.id));
+        if (selectedBusiness?.id === confirmModal.id) setSelectedBusiness(null);
+        setNotification({ message: 'Business deleted successfully!', type: 'success' });
+      }
     } catch {
-      alert('Failed to delete product');
+      setNotification({
+        message: `Failed to delete ${confirmModal.type}.`,
+        type: 'error',
+      });
+    } finally {
+      setConfirmModal({ show: false, type: '', id: null }); // Close modal
     }
   };
+
+
 
   return (
     <div className="myaccount-container">
@@ -464,6 +461,22 @@ const VendorDashboard = ({ token: propToken }) => {
       </aside>
 
       <main className="myaccount-content">
+        {notification.message && (
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              borderRadius: '8px',
+              color: notification.type === 'success' ? '#065f46' : '#991b1b',
+              backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
+              border: notification.type === 'success' ? '1px solid #10b981' : '1px solid #ef4444',
+              textAlign: 'center'
+            }}
+          >
+            {notification.message}
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
         <div className="tab-content">
           <h1>Dashboard</h1>
@@ -507,14 +520,20 @@ const VendorDashboard = ({ token: propToken }) => {
   </div>
 )}
 
-
         {activeTab === 'businesses' && (
           <div className="tab-content">
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem'}}>
               <h2>My Businesses</h2>
               <button className="add-btn" onClick={handleAddBusinessClick}><Plus /> Add Business</button>
             </div>
-            {loadingBusinesses ? <p>Loading...</p> : (
+            {loadingBusinesses ? (
+              <p>Loading...</p>
+            ) : businesses.length === 0 ? (
+              <div className="empty-state">
+                <p>No businesses have been added yet.</p>
+                <p>Click <strong>"Add Business"</strong> to create your first business.</p>
+              </div>
+            ) : (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'1rem'}}>
                 {businesses.map(b => (
                   <div
@@ -572,7 +591,7 @@ const VendorDashboard = ({ token: propToken }) => {
                       </button>
                       <button
                         className="delete-btn"
-                        onClick={() => handleDeleteBusiness(b.id)}
+                        onClick={() => openDeleteModal('business', b.id)}
                       >
                         Delete
                       </button>
@@ -584,72 +603,103 @@ const VendorDashboard = ({ token: propToken }) => {
           </div>
         )}
 
-        {activeTab === 'products' && (
-          <div className="tab-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2>Products for <span style={{ color: '#22c55e' }}>{selectedBusiness?.name}</span></h2>
-              <button className="add-btn" onClick={handleAddProductClick}><Plus /> Add Product</button>
-            </div>
-            {loadingProducts ? <p>Loading...</p> : (
-              products.length === 0 ? (
-                <div className="empty-state">
-                  <p>No products have been added for <strong>{selectedBusiness?.name}</strong>.</p>
-                </div>
-              ) : (
-                <div className="products-grid">
-                  {products.map(product => (
-                    <div key={product.id} className="product-card">
-                      <img
-                        src={product.image ? `/storage/${product.image}` : '/placeholder.png'}
-                        alt={product.name}
-                        className="product-image"
-                      />
-                      <h4 style={{ margin: '0.5rem 0 0.25rem 0' }}>{product.name}</h4>
-                      <p style={{ fontWeight: 'bold' }}>₺{product.price}</p>
-                      <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                        {product.category?.name}
-                      </p>
-                      <p style={{
-                            fontSize: '0.85rem',
-                            fontWeight: '500',
-                            color:
-                              product.stock === 0
-                                ? '#dc2626'   // Red
-                                : product.stock <= 5
-                                ? '#ea580c'   // Orange
-                                : '#16a34a'   // Green
-                          }}
-                        >
-                          Stock: {product.stock}
-                        </p>
+       {activeTab === 'products' && (
+    <div className="tab-content">
+      {businesses.length === 0 ? (
+        <div className="empty-state"> 
+          <p>You cannot add products yet.</p>
+          <p>Please create a <strong>business</strong> first.</p>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2>
+              Products for <span style={{ color: '#22c55e' }}>{selectedBusiness?.name || 'Select a business'}</span>
+            </h2>
+            <button 
+              className="add-btn" 
+              onClick={handleAddProductClick} 
+              disabled={!selectedBusiness} // ✅ Disabled if no business selected
+              style={{
+                opacity: !selectedBusiness ? 0.5 : 1,
+                cursor: !selectedBusiness ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <Plus /> Add Product
+            </button>
+          </div>
 
-                      <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
-                        <button
-                          className="edit-btn"
-                          onClick={() => {
-                            setEditProductMode(true);
-                            setEditingProductId(product.id);
-                            setNewProduct({
-                              name: product.name,
-                              price: product.price,
-                              stock: product.stock,
-                              category_id: product.category_id,
-                              image: null
-                            });
-                            setShowProductModal(true);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button className="delete-btn" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
-                      </div>
-                    </div>
-                  ))}
+          {!selectedBusiness ? (
+            <div style={{ textAlign: 'center', marginTop: '2rem', color: '#6b7280', fontSize: '1.1rem' }}>
+              <p>ℹ️ Select a business from <strong>My Businesses</strong> to view and manage its products.</p>
+            </div>
+          ) : loadingProducts ? (
+            <p>Loading...</p>
+          ) : products.length === 0 ? (
+            <div className="empty-state">
+              <p>No products have been added for <strong>{selectedBusiness?.name}</strong>.</p>
+            </div>
+          ) : (
+            <div className="products-grid">
+              {products.map(product => (
+                <div key={product.id} className="product-card">
+                  <img
+                    src={product.image ? `http://localhost:8000/storage/${product.image}` : '/placeholder.png'}
+                    alt={product.name}
+                    className="product-image"
+                  />
+                  <h4 style={{ margin: '0.5rem 0 0.25rem 0' }}>{product.name}</h4>
+                  <p style={{ fontWeight: 'bold' }}>₺{product.price}</p>
+                  <p className="product-description">{product.description}</p>
+                  <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
+                    {product.category?.name}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '500',
+                      color:
+                        product.stock === 0
+                          ? '#dc2626'   // Red
+                          : product.stock <= 5
+                          ? '#ea580c'   // Orange
+                          : '#16a34a'   // Green
+                    }}
+                  >
+                    Stock: {product.stock}
+                  </p>
+
+                <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
+                  <button
+                    className="edit-btn"
+                    onClick={() => {
+                      setEditProductMode(true);
+                      setEditingProductId(product.id);
+                      setNewProduct({
+                        name: product.name,
+                        price: product.price,
+                        stock: product.stock,
+                        category_id: product.category_id,
+                        image: null
+                      });
+                      setShowProductModal(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button className="delete-btn" 
+                  onClick={() => openDeleteModal('product', product.id)}
+                  >Delete</button>
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
         )}
+      </>
+    )}
+  </div>
+)}
+
         {activeTab === 'orders' && (
           <div className="tab-content">
             <h2>Orders for {selectedBusiness?.name}</h2>
@@ -764,6 +814,7 @@ const VendorDashboard = ({ token: propToken }) => {
             <h2 className="modal-title">{editProductMode ? 'Edit Product' : 'Add New Product'}</h2>
             <div className="modal-form">
               <input type="text" placeholder="Name" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
+              <input type="text" placeholder="description" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
               <input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
               <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
                 <select
@@ -793,7 +844,7 @@ const VendorDashboard = ({ token: propToken }) => {
                     setShowProductModal(false);
                     setEditProductMode(false);
                     setEditingProductId(null);
-                    setNewProduct({ name: '', price: '', stock: '', category_id: '', image: null });
+                    setNewProduct({ name: '', price: '', description:'', stock: '', category_id: '', image: null });
                   }}
                 >
                   Cancel
@@ -803,6 +854,43 @@ const VendorDashboard = ({ token: propToken }) => {
           </div>
         </div>
       )}
+       {confirmModal.show && (
+          <div className="modal-overlay">
+            <div className="modal-box">
+              <h3>
+                Are you sure you want to delete this {confirmModal.type}?
+              </h3>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'center' }}>
+                <button
+                  onClick={confirmDelete}
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setConfirmModal({ show: false, type: '', id: null })}
+                  style={{
+                    backgroundColor: '#e5e7eb',
+                    color: '#111827',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && <p style={{color:'red', marginTop:'1rem'}}>{error}</p>}
       </main>

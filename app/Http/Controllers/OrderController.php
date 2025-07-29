@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\NewOrderNotification;
 
 class OrderController extends Controller
 {
@@ -68,6 +70,12 @@ class OrderController extends Controller
             'status' => 'pending',
             'business_id' => $businessId,
         ]);
+
+        // Send notification to business owner/vendor
+        $business = $firstProduct->business;
+        if ($business && $business->vendor) {
+            $business->vendor->notify(new NewOrderNotification($order));
+        }
 
         // ✅ Save order items and reduce stock
         foreach ($request->items as $item) {
