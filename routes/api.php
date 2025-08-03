@@ -41,6 +41,26 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin analytics/metrics
     Route::get('/admin/metrics', [AdminController::class, 'getMetrics']);
 
+    Route::prefix('admin/applications')->group(function () {
+        Route::get('/pending', [AdminBusinessApplicationController::class, 'pendingApplications']);
+        Route::get('/all', [AdminBusinessApplicationController::class, 'allApplications']);
+        Route::get('/stats', [AdminBusinessApplicationController::class, 'getApplicationStats']);
+        Route::get('/{id}', [AdminBusinessApplicationController::class, 'showApplication']);
+        Route::post('/{id}/approve', [AdminBusinessApplicationController::class, 'approveApplication']);
+        Route::post('/{id}/reject', [AdminBusinessApplicationController::class, 'rejectApplication']);
+        Route::post('/{id}/notes', [AdminBusinessApplicationController::class, 'addNotes']);
+        Route::get('/{id}/documents/{type}', [AdminBusinessApplicationController::class, 'downloadDocument']);
+        Route::get('/{id}/storefront-photos', [AdminBusinessApplicationController::class, 'viewStorefrontPhotos']);
+    });
+
+    // Business Application Routes (for vendors)
+    Route::prefix('business-applications')->group(function () {
+        Route::post('/', [BusinessApplicationController::class, 'store']);
+        Route::get('/', [BusinessApplicationController::class, 'index']);
+        Route::get('/{id}', [BusinessApplicationController::class, 'show']);
+        Route::put('/{id}', [BusinessApplicationController::class, 'update']);
+        Route::delete('/{id}', [BusinessApplicationController::class, 'destroy']);
+    });
     // Auth controller routes
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);

@@ -9,8 +9,9 @@ import {
   Plus,
   LogOut
 } from 'lucide-react';
-import './MyAccount.css';
+import styles from './VendorDashboard.module.css';
 import { useNavigate } from 'react-router-dom';
+import BusinessApplication from './BusinessApplication';
 
 
 const API_BASE = '/api';
@@ -26,7 +27,7 @@ const VendorDashboard = ({ token: propToken }) => {
   const [categories, setCategories] = useState([]);
 
   const [error, setError] = useState('');
-  const [vendor, setVendor] = useState({ name: '', email: '' });
+  const [vendor, setVendor] = useState({ name: '', email: '', profile_picture: null });
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingBusinesses, setLoadingBusinesses] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -35,6 +36,7 @@ const VendorDashboard = ({ token: propToken }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [users, setUsers] = useState([]);
+  const [showBusinessApplication, setShowBusinessApplication] = useState(false);
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [confirmModal, setConfirmModal] = useState({
     show: false,
@@ -103,7 +105,11 @@ const VendorDashboard = ({ token: propToken }) => {
       credentials: 'include',
     })
       .then(res => res.ok ? res.json() : Promise.reject('Profile fetch failed'))
-      .then(data => setVendor({ name: data.user.name, email: data.user.email }))
+      .then(data => setVendor({ 
+        name: data.user.name, 
+        email: data.user.email,
+        profile_picture: data.user.profile_picture 
+      }))
       .catch(() => setError('Failed to fetch profile info.'))
       .finally(() => setLoadingProfile(false));
   }, [token]);
@@ -182,7 +188,7 @@ const VendorDashboard = ({ token: propToken }) => {
     setShowProductModal(true);
   };
 
-  const handleAddBusinessClick = () => setShowBusinessModal(true);
+  const handleAddBusinessClick = () => setShowBusinessApplication(true);
 
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', email: '', phone: '', address: '', logo: null });
@@ -433,469 +439,707 @@ const VendorDashboard = ({ token: propToken }) => {
 
 
 
-  return (
-    <div className="myaccount-container">
-      <aside className="myaccount-sidebar">
-        <div className="sidebar-header">
-          <div className="sidebar-user-info">
-            {loadingProfile ? <p>Loading...</p> : (
-              <>
-                <h4>{vendor.name || 'Vendor'}</h4>
-                <span className="user-email">{vendor.email}</span>
-              </>
-            )}
-          </div>
+ return (
+  <div className={styles["myaccount-container"]}>
+    <aside className={styles["myaccount-sidebar"]}>
+      <div className={styles["sidebar-header"]}>
+        <div className={styles["sidebar-user-info"]}>
+          {loadingProfile ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              <h4>{vendor.name || "Vendor"}</h4>
+              <span className={styles["user-email"]}>{vendor.email}</span>
+            </>
+          )}
         </div>
-        <nav className="sidebar-nav">
-          <button onClick={() => setActiveTab('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}><ShoppingCart /> Dashboard</button>
-          <button onClick={() => setActiveTab('businesses')} className={`nav-item ${activeTab === 'businesses' ? 'active' : ''}`}><Package /> My Businesses</button>
-          <button onClick={() => setActiveTab('products')} className={`nav-item ${activeTab === 'products' ? 'active' : ''}`}><Package /> Products</button>
-          <button onClick={() => setActiveTab('orders')} className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}><DollarSign /> Orders</button>
-          <button onClick={() => setActiveTab('customers')} className={`nav-item ${activeTab === 'customers' ? 'active' : ''}`}><Users /> Customers</button>
-          <button onClick={() => setActiveTab('messages')} className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}><MessageSquare /> Messages</button>
-          <button onClick={() => setActiveTab('settings')} className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}><Settings /> Settings</button>
-        </nav>
-        <button className="logout-btn" onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }}>
-          <LogOut /> Logout
-        </button>
-      </aside>
-
-      <main className="myaccount-content">
-        {notification.message && (
-          <div
-            style={{
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
-              borderRadius: '8px',
-              color: notification.type === 'success' ? '#065f46' : '#991b1b',
-              backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
-              border: notification.type === 'success' ? '1px solid #10b981' : '1px solid #ef4444',
-              textAlign: 'center'
-            }}
-          >
-            {notification.message}
-          </div>
-        )}
-
-        {activeTab === 'dashboard' && (
-        <div className="tab-content">
-          <h1>Dashboard</h1>
-          <p>Welcome back! Here's your summary.</p>
-          <div style={{display:'flex', gap:'1rem', marginTop:'1rem'}}>
-            {/* existing summary cards */}
-            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-              <p>Total Revenue</p>
-              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>₺{totalRevenue.toLocaleString()}</p>
-            </div>
-            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-              <p>Total Businesses</p>
-              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{businesses.length}</p>
-            </div>
-            <div style={{background:'white', padding:'1rem', borderRadius:'12px', boxShadow:'0 0 10px rgba(0,0,0,0.1)', flex:1}}>
-              <p>Total Products</p>
-              <p style={{fontWeight:'bold', fontSize:'1.5rem'}}>{totalProducts}</p>
-            </div>
-          </div>
-
-    {/* ✅ ADD THIS BLOCK BELOW */}
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '2rem' }}>
-      {businessStats.map((biz) => (
-        <div
-          key={biz.id}
-          style={{
-            backgroundColor: '#f8f8f9ff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '10px',
-            padding: '1rem',
-            flex: '1 1 250px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-          }}
+      </div>
+      <nav className={styles["sidebar-nav"]}>
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={`${styles["nav-item"]} ${activeTab === "dashboard" ? styles.active : ""}`}
         >
-          <h3>{biz.name}</h3>
-          <p><strong>Total Orders:</strong> {biz.total_orders}</p>
-          <p><strong>Total Revenue:</strong> ₺{biz.total_revenue.toLocaleString()}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+          <ShoppingCart /> Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab("businesses")}
+          className={`${styles["nav-item"]} ${activeTab === "businesses" ? styles.active : ""}`}
+        >
+          <Package /> My Businesses
+        </button>
+        <button
+          onClick={() => setActiveTab("products")}
+          className={`${styles["nav-item"]} ${activeTab === "products" ? styles.active : ""}`}
+        >
+          <Package /> Products
+        </button>
+        <button
+          onClick={() => setActiveTab("orders")}
+          className={`${styles["nav-item"]} ${activeTab === "orders" ? styles.active : ""}`}
+        >
+          <DollarSign /> Orders
+        </button>
+        <button
+          onClick={() => setActiveTab("customers")}
+          className={`${styles["nav-item"]} ${activeTab === "customers" ? styles.active : ""}`}
+        >
+          <Users /> Customers
+        </button>
+        <button
+          onClick={() => setActiveTab("messages")}
+          className={`${styles["nav-item"]} ${activeTab === "messages" ? styles.active : ""}`}
+        >
+          <MessageSquare /> Messages
+        </button>
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`${styles["nav-item"]} ${activeTab === "settings" ? styles.active : ""}`}
+        >
+          <Settings /> Settings
+        </button>
+      </nav>
+      <button
+        className={styles["logout-btn"]}
+        onClick={() => {
+          localStorage.removeItem("auth_token");
+          navigate("/login");
+        }}
+      >
+        <LogOut /> Logout
+      </button>
+    </aside>
 
-        {activeTab === 'businesses' && (
-          <div className="tab-content">
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem'}}>
-              <h2>My Businesses</h2>
-              <button className="add-btn" onClick={handleAddBusinessClick}><Plus /> Add Business</button>
-            </div>
-            {loadingBusinesses ? (
-              <p>Loading...</p>
-            ) : businesses.length === 0 ? (
-              <div className="empty-state">
-                <p>No businesses have been added yet.</p>
-                <p>Click <strong>"Add Business"</strong> to create your first business.</p>
-              </div>
-            ) : (
-              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'1rem'}}>
-                {businesses.map(b => (
-                  <div
-                    key={b.id}
-                    className={`business-card ${selectedBusiness?.id === b.id ? 'selected-business' : ''}`}
-                    onClick={() => {
-                      setSelectedBusiness(b);
-                      setActiveTab('products');
-                    }}
-                    style={{
-                      backgroundColor: selectedBusiness?.id === b.id ? '#d1fae5' : 'white',
-                      border: '1px solid #ccc',
-                      borderRadius: '12px',
-                      padding: '1rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                      transition: 'box-shadow 0.2s ease',
-                    }}
-                  >
-                    {/* ✅ Logo display */}
-                    {b.logo && (
-                      <img
-                        src={`http://localhost:8000/storage/${b.logo}`} // full accessible path
-                        alt={`${b.name} Logo`}
-                        style={{
-                          width: '100%',
-                          height: '150px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          marginBottom: '0.5rem',
-                        }}
-                      />
-                    )}
-                    <h3 style={{marginTop: 0, marginBottom: '0.5rem'}}>{b.name}</h3>
-                    <p><strong>Email:</strong> {b.email}</p>
-                    <p><strong>Phone:</strong> {b.phone}</p>
-                    <p><strong>Address:</strong> {b.address}</p>
-                    <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
-                      <button
-                        className="edit-btn"
-                        onClick={() => {
-                          setEditMode(true);
-                          setEditingBusinessId(b.id);
-                          setNewBusiness({
-                            name: b.name,
-                            email: b.email,
-                            phone: b.phone,
-                            address: b.address,
-                            logo: null,
-                          });
-                          setShowBusinessModal(true);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="delete-btn"
-                        onClick={() => openDeleteModal('business', b.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-       {activeTab === 'products' && (
-    <div className="tab-content">
-      {businesses.length === 0 ? (
-        <div className="empty-state"> 
-          <p>You cannot add products yet.</p>
-          <p>Please create a <strong>business</strong> first.</p>
-        </div>
+    <main className={styles["myaccount-content"]}>
+      {showBusinessApplication ? (
+        <BusinessApplication 
+          onBack={() => setShowBusinessApplication(false)}
+          onComplete={() => {
+            setShowBusinessApplication(false);
+            // Refresh businesses list or show success message
+          }}
+        />
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2>
-              Products for <span style={{ color: '#22c55e' }}>{selectedBusiness?.name || 'Select a business'}</span>
-            </h2>
-            <button 
-              className="add-btn" 
-              onClick={handleAddProductClick} 
-              disabled={!selectedBusiness} // ✅ Disabled if no business selected
+          {notification.message && (
+            <div
               style={{
-                opacity: !selectedBusiness ? 0.5 : 1,
-                cursor: !selectedBusiness ? 'not-allowed' : 'pointer'
+                padding: "0.75rem 1rem",
+                marginBottom: "1rem",
+                borderRadius: "8px",
+                color: notification.type === "success" ? "#065f46" : "#991b1b",
+                backgroundColor: notification.type === "success" ? "#d1fae5" : "#fee2e2",
+                border: notification.type === "success" ? "1px solid #10b981" : "1px solid #ef4444",
+                textAlign: "center",
               }}
             >
-              <Plus /> Add Product
-            </button>
-          </div>
-
-          {!selectedBusiness ? (
-            <div style={{ textAlign: 'center', marginTop: '2rem', color: '#6b7280', fontSize: '1.1rem' }}>
-              <p>ℹ️ Select a business from <strong>My Businesses</strong> to view and manage its products.</p>
+              {notification.message}
             </div>
-          ) : loadingProducts ? (
-            <p>Loading...</p>
-          ) : products.length === 0 ? (
-            <div className="empty-state">
-              <p>No products have been added for <strong>{selectedBusiness?.name}</strong>.</p>
-            </div>
-          ) : (
-            <div className="products-grid">
-              {products.map(product => (
-                <div key={product.id} className="product-card">
-                  <img
-                    src={product.image ? `http://localhost:8000/storage/${product.image}` : '/placeholder.png'}
-                    alt={product.name}
-                    className="product-image"
-                  />
-                  <h4 style={{ margin: '0.5rem 0 0.25rem 0' }}>{product.name}</h4>
-                  <p style={{ fontWeight: 'bold' }}>₺{product.price}</p>
-                  <p className="product-description">{product.description}</p>
-                  <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                    {product.category?.name}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '0.85rem',
-                      fontWeight: '500',
-                      color:
-                        product.stock === 0
-                          ? '#dc2626'   // Red
-                          : product.stock <= 5
-                          ? '#ea580c'   // Orange
-                          : '#16a34a'   // Green
-                    }}
-                  >
-                    Stock: {product.stock}
-                  </p>
+          )}
 
-                <div className="business-card-buttons" onClick={e => e.stopPropagation()}>
-                  <button
-                    className="edit-btn"
-                    onClick={() => {
-                      setEditProductMode(true);
-                      setEditingProductId(product.id);
-                      setNewProduct({
-                        name: product.name,
-                        price: product.price,
-                        stock: product.stock,
-                        category_id: product.category_id,
-                        image: null
-                      });
-                      setShowProductModal(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button className="delete-btn" 
-                  onClick={() => openDeleteModal('product', product.id)}
-                  >Delete</button>
+          {activeTab === "dashboard" && (
+            <div className={styles["tab-content"]}>
+              <h1>Dashboard</h1>
+              <p>Welcome back! Here's your summary.</p>
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <div
+                  style={{
+                    background: "white",
+                    padding: "1rem",
+                    borderRadius: "12px",
+                    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+                    flex: 1,
+                  }}
+                >
+                  <p>Total Revenue</p>
+                  <p style={{ fontWeight: "bold", fontSize: "1.5rem" }}>₺{totalRevenue.toLocaleString()}</p>
+                </div>
+                <div
+                  style={{
+                    background: "white",
+                    padding: "1rem",
+                    borderRadius: "12px",
+                    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+                    flex: 1,
+                  }}
+                >
+                  <p>Total Businesses</p>
+                  <p style={{ fontWeight: "bold", fontSize: "1.5rem" }}>{businesses.length}</p>
+                </div>
+                <div
+                  style={{
+                    background: "white",
+                    padding: "1rem",
+                    borderRadius: "12px",
+                    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+                    flex: 1,
+                  }}
+                >
+                  <p>Total Products</p>
+                  <p style={{ fontWeight: "bold", fontSize: "1.5rem" }}>{totalProducts}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </>
-    )}
-  </div>
-)}
 
-        {activeTab === 'orders' && (
-          <div className="tab-content">
-            <h2>Orders for {selectedBusiness?.name}</h2>
-            {loadingOrders ? (
-              <p>Loading orders...</p>
-            ) : orders.length === 0 ? (
-              <p>No orders found for this business.</p>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                {orders.map((order, index) => (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "2rem" }}>
+                {businessStats.map((biz) => (
                   <div
-                    key={order.id}
+                    key={biz.id}
                     style={{
-                      background: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '10px',
-                      padding: '1rem',
-                      width: '100%',
-                      maxWidth: '500px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                      flex: '1 1 300px'
+                      backgroundColor: "#f8f8f9ff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "10px",
+                      padding: "1rem",
+                      flex: "1 1 250px",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
                     }}
                   >
-                    <h3 style={{ marginBottom: '0.5rem' }}>Order #{order.id}</h3>
-                    <p><strong>Customer:</strong> {order.user?.name || 'N/A'}</p>
-                    <p><strong>Status:</strong> {order.status}</p>
-                    <p><strong>Total:</strong> ₺{order.total}</p>
-                    <p><strong>Rider:</strong> {order.rider?.name || 'Unassigned'}</p>
-
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <p><strong>Items:</strong></p>
-                      <ul style={{ paddingLeft: '1rem' }}>
-                        {order.items?.map(item => (
-                          <div key={item.id}>
-                            {item.product?.name || 'Unknown'} × {item.quantity}
-                          </div>
-                        ))}
-                        
-                      </ul>
-                    </div>
-
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>
-                        <strong>Assign Rider:</strong>
-                      </label>
-                      <select
-                        onChange={e => assignRiderToOrder(order.id, e.target.value)}
-                        defaultValue=""
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          border: '1px solid #ccc'
-                        }}
-                      >
-                        <option value="">Select Rider</option>
-                        {users.filter(u => u.role === 'rider').map(rider => (
-                          <option key={rider.id} value={rider.id}>{rider.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <h3>{biz.name}</h3>
+                    <p>
+                      <strong>Total Orders:</strong> {biz.total_orders}
+                    </p>
+                    <p>
+                      <strong>Total Revenue:</strong> ₺{biz.total_revenue.toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-
-
-
-        {['customers', 'messages', 'settings'].includes(activeTab) && (
-          <div className="tab-content">
-            <h2 style={{textTransform:'capitalize'}}>{activeTab} section coming soon...</h2>
-          </div>
-        )}
-
-      {showBusinessModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <h2 className="modal-title">{editMode ? 'Edit Business' : 'Add New Business'}</h2>
-            <div className="modal-form">
-              <input type="text" placeholder="Business Name" value={newBusiness.name} onChange={e => setNewBusiness({ ...newBusiness, name: e.target.value })} />
-              <input type="email" placeholder="Email" value={newBusiness.email} onChange={e => setNewBusiness({ ...newBusiness, email: e.target.value })} />
-              <input type="text" placeholder="Phone" value={newBusiness.phone} onChange={e => setNewBusiness({ ...newBusiness, phone: e.target.value })} />
-              <input type="text" placeholder="Address" value={newBusiness.address} onChange={e => setNewBusiness({ ...newBusiness, address: e.target.value })} />
-              <input type="file" accept="image/*" onChange={(e) => setNewBusiness({ ...newBusiness, logo: e.target.files[0] })} />
-
-              <div className="modal-actions">
-                <button className="modal-save" onClick={handleAddBusiness}>
-                  {editMode ? 'Update' : 'Add'}
-                </button>
-                <button
-                  className="modal-cancel"
-                  onClick={() => {
-                    setShowBusinessModal(false);
-                    setEditMode(false);
-                    setEditingBusinessId(null);
-                    setNewBusiness({ name: '', email: '', phone: '', address: '', logo: null });
-                  }}
-                >
-                  Cancel
+          {activeTab === "businesses" && (
+            <div className={styles["tab-content"]}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1rem",
+                }}
+              >
+                <h2>My Businesses</h2>
+                <button className={styles["add-btn"]} onClick={handleAddBusinessClick}>
+                  <Plus /> Add Business
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showProductModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <h2 className="modal-title">{editProductMode ? 'Edit Product' : 'Add New Product'}</h2>
-            <div className="modal-form">
-              <input type="text" placeholder="Name" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
-              <input type="text" placeholder="description" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
-              <input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
-              <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
-                <select
-                  className="custom-select spaced-input"
-                  value={newProduct.category_name}
-                  onChange={(e) => setNewProduct({ ...newProduct, category_name: e.target.value })}
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </option>
+              {loadingBusinesses ? (
+                <p>Loading...</p>
+              ) : businesses.length === 0 ? (
+                <div className={styles["empty-state"]}>
+                  <p>No businesses have been added yet.</p>
+                  <p>
+                    Click <strong>"Add Business"</strong> to create your first business.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem" }}>
+                  {businesses.map((b) => (
+                    <div
+                      key={b.id}
+                      className={`${styles["business-card"]} ${selectedBusiness?.id === b.id ? styles["selected-business"] : ""}`}
+                      onClick={() => {
+                        setSelectedBusiness(b);
+                        setActiveTab("products");
+                      }}
+                      style={{
+                        backgroundColor: selectedBusiness?.id === b.id ? "#d1fae5" : "white",
+                        border: "1px solid #ccc",
+                        borderRadius: "12px",
+                        padding: "1rem",
+                        cursor: "pointer",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                        transition: "box-shadow 0.2s ease",
+                      }}
+                    >
+                      {b.logo && (
+                        <img
+                          src={`http://localhost:8000/storage/${b.logo}`}
+                          alt={`${b.name} Logo`}
+                          style={{
+                            width: "100%",
+                            height: "150px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            marginBottom: "0.5rem",
+                          }}
+                        />
+                      )}
+                      <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>{b.name}</h3>
+                      <p>
+                        <strong>Email:</strong> {b.email}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {b.phone}
+                      </p>
+                      <p>
+                        <strong>Address:</strong> {b.address}
+                      </p>
+                      <div className={styles["business-card-buttons"]} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className={styles["edit-btn"]}
+                          onClick={() => {
+                            setEditMode(true);
+                            setEditingBusinessId(b.id);
+                            setNewBusiness({
+                              name: b.name,
+                              email: b.email,
+                              phone: b.phone,
+                              address: b.address,
+                              logo: null,
+                            });
+                            setShowBusinessModal(true);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button className={styles["delete-btn"]} onClick={() => openDeleteModal("business", b.id)}>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
-                </select>
-              <input type="file" accept="image/*" onChange={(e) => setNewProduct({ ...newProduct, image: e.target.files[0] })} />
+                </div>
+              )}
+            </div>
+          )}
 
-              <div className="modal-actions">
-                <button
-                  className="modal-save"
-                  onClick={editProductMode ? handleUpdateProduct : handleAddProduct}
-                >
-                  {editProductMode ? 'Update' : 'Add'}
-                </button>
-                <button
-                  className="modal-cancel"
-                  onClick={() => {
-                    setShowProductModal(false);
-                    setEditProductMode(false);
-                    setEditingProductId(null);
-                    setNewProduct({ name: '', price: '', description:'', stock: '', category_id: '', image: null });
-                  }}
-                >
-                  Cancel
-                </button>
+          {activeTab === "products" && (
+            <div className={styles["tab-content"]}>
+              {businesses.length === 0 ? (
+                <div className={styles["empty-state"]}>
+                  <p>You cannot add products yet.</p>
+                  <p>Please create a <strong>business</strong> first.</p>
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "1.5rem",
+                    }}
+                  >
+                    <h2>
+                      Products for <span style={{ color: "#22c55e" }}>{selectedBusiness?.name || "Select a business"}</span>
+                    </h2>
+                    <button
+                      className={styles["add-btn"]}
+                      onClick={handleAddProductClick}
+                      disabled={!selectedBusiness}
+                      style={{
+                        opacity: !selectedBusiness ? 0.5 : 1,
+                        cursor: !selectedBusiness ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      <Plus /> Add Product
+                    </button>
+                  </div>
+
+                  {!selectedBusiness ? (
+                    <div style={{ textAlign: "center", marginTop: "2rem", color: "#6b7280", fontSize: "1.1rem" }}>
+                      <p>
+                        ℹ️ Select a business from <strong>My Businesses</strong> to view and manage its products.
+                      </p>
+                    </div>
+                  ) : loadingProducts ? (
+                    <p>Loading...</p>
+                  ) : products.length === 0 ? (
+                    <div className={styles["empty-state"]}>
+                      <p>No products have been added for <strong>{selectedBusiness?.name}</strong>.</p>
+                    </div>
+                  ) : (
+                    <div className={styles["products-grid"]}>
+                      {products.map((product) => (
+                        <div key={product.id} className={styles["product-card"]}>
+                          <img
+                            src={product.image ? `http://localhost:8000/storage/${product.image}` : "/placeholder.png"}
+                            alt={product.name}
+                            className={styles["product-image"]}
+                          />
+                          <h4 style={{ margin: "0.5rem 0 0.25rem 0" }}>{product.name}</h4>
+                          <p style={{ fontWeight: "bold" }}>₺{product.price}</p>
+                          <p className={styles["product-description"]}>{product.description}</p>
+                          <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "0.25rem" }}>
+                            {product.category?.name}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "0.85rem",
+                              fontWeight: "500",
+                              color:
+                                product.stock === 0
+                                  ? "#dc2626" // Red
+                                  : product.stock <= 5
+                                  ? "#ea580c" // Orange
+                                  : "#16a34a", // Green
+                            }}
+                          >
+                            Stock: {product.stock}
+                          </p>
+
+                          <div className={styles["business-card-buttons"]} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className={styles["edit-btn"]}
+                              onClick={() => {
+                                setEditProductMode(true);
+                                setEditingProductId(product.id);
+                                setNewProduct({
+                                  name: product.name,
+                                  price: product.price,
+                                  stock: product.stock,
+                                  category_id: product.category_id,
+                                  image: null,
+                                });
+                                setShowProductModal(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button className={styles["delete-btn"]} onClick={() => openDeleteModal("product", product.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {activeTab === "orders" && (
+            <div className={styles["tab-content"]}>
+              <div className={styles["orders-header"]}>
+                <h2 className={styles["orders-title"]}>
+                  Orders Dashboard
+                </h2>
+                <p className={styles["orders-subtitle"]}>
+                  {selectedBusiness?.name ? `Managing orders for ${selectedBusiness.name}` : "Select a business to view orders"}
+                </p>
+                
+                {/* Order Statistics */}
+                <div className={styles["orders-stats"]}>
+                  <div className={`${styles["stat-card"]} ${styles["total"]}`}>
+                    <h3 className={styles["stat-number"]}>
+                      {orders.length}
+                    </h3>
+                    <p className={styles["stat-label"]}>Total Orders</p>
+                  </div>
+                  
+                  <div className={`${styles["stat-card"]} ${styles["completed"]}`}>
+                    <h3 className={styles["stat-number"]}>
+                      {orders.filter(order => order.status === 'completed').length}
+                    </h3>
+                    <p className={styles["stat-label"]}>Completed</p>
+                  </div>
+                  
+                  <div className={`${styles["stat-card"]} ${styles["pending"]}`}>
+                    <h3 className={styles["stat-number"]}>
+                      {orders.filter(order => order.status === 'pending').length}
+                    </h3>
+                    <p className={styles["stat-label"]}>Pending</p>
+                  </div>
+                  
+                  <div className={`${styles["stat-card"]} ${styles["revenue"]}`}>
+                    <h3 className={styles["stat-number"]}>
+                      ₺{orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toLocaleString()}
+                    </h3>
+                    <p className={styles["stat-label"]}>Total Revenue</p>
+                  </div>
+                </div>
+              </div>
+
+              {!selectedBusiness ? (
+                <div className={styles["orders-empty-state"]}>
+                  <div className={styles["orders-empty-icon"]}>📋</div>
+                  <h3 className={styles["orders-empty-title"]}>No Business Selected</h3>
+                  <p className={styles["orders-empty-text"]}>Please select a business from "My Businesses" to view its orders.</p>
+                </div>
+              ) : loadingOrders ? (
+                <div className={styles["orders-loading"]}>
+                  <div className={styles["loading-spinner"]}></div>
+                  <p className={styles["loading-text"]}>Loading orders...</p>
+                </div>
+              ) : orders.length === 0 ? (
+                <div className={styles["orders-empty-state"]}>
+                  <div className={styles["orders-empty-icon"]}>📦</div>
+                  <h3 className={styles["orders-empty-title"]}>No Orders Yet</h3>
+                  <p className={styles["orders-empty-text"]}>Orders for {selectedBusiness.name} will appear here once customers start placing them.</p>
+                </div>
+              ) : (
+                <div className={styles["orders-container"]}>
+                  {orders.map((order) => (
+                    <div key={order.id} className={styles["order-card-enhanced"]}>
+                      {/* Order Header */}
+                      <div className={styles["order-header"]}>
+                        <h3 className={styles["order-id"]}>Order #{order.id}</h3>
+                        <div className={styles["order-meta"]}>
+                          <span className={styles["order-date"]}>
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </span>
+                          <span className={`${styles["order-status"]} ${styles[order.status?.toLowerCase() || 'pending']}`}>
+                            {order.status || 'pending'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Order Body */}
+                      <div className={styles["order-body"]}>
+                        {/* Customer Info */}
+                        <div className={styles["order-customer"]}>
+                          <div className={styles["customer-avatar"]}>
+                            {order.user?.profile_picture ? (
+                              <img
+                                src={`http://localhost:8000/storage/${order.user.profile_picture}`}
+                                alt={order.user?.name || "Customer"}
+                                className={styles["customer-avatar-img"]}
+                              />
+                            ) : (
+                              <span className={styles["customer-avatar-text"]}>
+                                {order.user?.name?.charAt(0) || 'U'}
+                              </span>
+                            )}
+                          </div>
+                          <div className={styles["customer-info"]}>
+                            <h4>{order.user?.name || "Unknown Customer"}</h4>
+                            <p>{order.user?.email || "No email"}</p>
+                          </div>
+                        </div>
+
+                        {/* Order Items */}
+                        <div className={styles["order-items"]}>
+                          <h4>Order Items</h4>
+                          <div className={styles["item-list"]}>
+                            {order.items?.map((item, index) => (
+                              <div key={index} className={styles["order-item"]}>
+                                <span className={styles["item-name"]}>
+                                  {item.product?.name || "Unknown Product"}
+                                </span>
+                                <span className={styles["item-quantity"]}>
+                                  × {item.quantity}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Order Total */}
+                        <div className={styles["order-total"]}>
+                          <span className={styles["total-label"]}>Total Amount:</span>
+                          <span className={styles["total-amount"]}>₺{order.total}</span>
+                        </div>
+
+                        {/* Rider Assignment */}
+                        <div className={styles["rider-section"]}>
+                          <h4>Delivery Assignment</h4>
+                          {order.rider ? (
+                            <div className={styles["rider-current"]}>
+                              <span className={styles["rider-icon"]}>🚴</span>
+                              <span className={styles["rider-name"]}>
+                                Assigned to: {order.rider.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.75rem" }}>
+                              No rider assigned yet
+                            </p>
+                          )}
+                          
+                          <select
+                            className={styles["rider-select"]}
+                            onChange={(e) => assignRiderToOrder(order.id, e.target.value)}
+                            defaultValue={order.rider?.id || ""}
+                          >
+                            <option value="">Select Rider</option>
+                            {users
+                              .filter((u) => u.role === "rider")
+                              .map((rider) => (
+                                <option key={rider.id} value={rider.id}>
+                                  {rider.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {["customers", "messages", "settings"].includes(activeTab) && (
+            <div className={styles["tab-content"]}>
+              <h2 style={{ textTransform: "capitalize" }}>{activeTab} section coming soon...</h2>
+            </div>
+          )}
+
+          {showBusinessModal && (
+            <div className={styles["modal-overlay"]}>
+              <div className={styles["modal-box"]}>
+                <h2 className={styles["modal-title"]}>{editMode ? "Edit Business" : "Add New Business"}</h2>
+                <div className={styles["modal-form"]}>
+                  <input
+                    type="text"
+                    placeholder="Business Name"
+                    value={newBusiness.name}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={newBusiness.email}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, email: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone"
+                    value={newBusiness.phone}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, phone: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Address"
+                    value={newBusiness.address}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setNewBusiness({ ...newBusiness, logo: e.target.files[0] })}
+                  />
+
+                  <div className={styles["modal-actions"]}>
+                    <button className={styles["modal-save"]} onClick={handleAddBusiness}>
+                      {editMode ? "Update" : "Add"}
+                    </button>
+                    <button
+                      className={styles["modal-cancel"]}
+                      onClick={() => {
+                        setShowBusinessModal(false);
+                        setEditMode(false);
+                        setEditingBusinessId(null);
+                        setNewBusiness({ name: "", email: "", phone: "", address: "", logo: null });
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {showProductModal && (
+            <div className={styles["modal-overlay"]}>
+              <div className={styles["modal-box"]}>
+                <h2 className={styles["modal-title"]}>{editProductMode ? "Edit Product" : "Add New Product"}</h2>
+                <div className={styles["modal-form"]}>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    placeholder="description"
+                    value={newProduct.description}
+                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Price"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Stock"
+                    value={newProduct.stock}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                  />
+                  <select
+                    className={`${styles["custom-select"]} ${styles["spaced-input"]}`}
+                    value={newProduct.category_name}
+                    onChange={(e) => setNewProduct({ ...newProduct, category_name: e.target.value })}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setNewProduct({ ...newProduct, image: e.target.files[0] })}
+                  />
+
+                  <div className={styles["modal-actions"]}>
+                    <button className={styles["modal-save"]} onClick={editProductMode ? handleUpdateProduct : handleAddProduct}>
+                      {editProductMode ? "Update" : "Add"}
+                    </button>
+                    <button
+                      className={styles["modal-cancel"]}
+                      onClick={() => {
+                        setShowProductModal(false);
+                        setEditProductMode(false);
+                        setEditingProductId(null);
+                        setNewProduct({ name: "", price: "", description: "", stock: "", category_id: "", image: null });
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {confirmModal.show && (
+            <div className={styles["modal-overlay"]}>
+              <div className={styles["modal-box"]}>
+                <h3>Are you sure you want to delete this {confirmModal.type}?</h3>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", justifyContent: "center" }}>
+                  <button
+                    onClick={confirmDelete}
+                    style={{
+                      backgroundColor: "#dc2626",
+                      color: "white",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Yes, Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmModal({ show: false, type: "", id: null })}
+                    style={{
+                      backgroundColor: "#e5e7eb",
+                      color: "#111827",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
+        </>
       )}
-       {confirmModal.show && (
-          <div className="modal-overlay">
-            <div className="modal-box">
-              <h3>
-                Are you sure you want to delete this {confirmModal.type}?
-              </h3>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'center' }}>
-                <button
-                  onClick={confirmDelete}
-                  style={{
-                    backgroundColor: '#dc2626',
-                    color: 'white',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Yes, Delete
-                </button>
-                <button
-                  onClick={() => setConfirmModal({ show: false, type: '', id: null })}
-                  style={{
-                    backgroundColor: '#e5e7eb',
-                    color: '#111827',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && <p style={{color:'red', marginTop:'1rem'}}>{error}</p>}
-      </main>
-    </div>
-  );
+    </main>
+  </div>
+);
 };
 
 export default VendorDashboard;
