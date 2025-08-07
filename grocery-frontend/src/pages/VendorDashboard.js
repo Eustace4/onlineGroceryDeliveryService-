@@ -7,11 +7,16 @@ import {
   MessageSquare,
   Settings,
   Plus,
-  LogOut
+  LogOut,
+  FileText 
 } from 'lucide-react';
 import styles from './VendorDashboard.module.css';
 import { useNavigate } from 'react-router-dom';
 import BusinessApplication from './BusinessApplication';
+import ApplicationsManager from '../components/ApplicationsManager';
+import VendorSettings from '../components/VendorSettings';
+import CustomerSection from '../components/CustomerSection'
+
 
 
 const API_BASE = '/api';
@@ -486,6 +491,12 @@ const VendorDashboard = ({ token: propToken }) => {
           <Users /> Customers
         </button>
         <button
+          onClick={() => setActiveTab("applications")}
+          className={`${styles["nav-item"]} ${activeTab === "applications" ? styles.active : ""}`}
+        >
+          <FileText /> Applications
+        </button>
+        <button
           onClick={() => setActiveTab("messages")}
           className={`${styles["nav-item"]} ${activeTab === "messages" ? styles.active : ""}`}
         >
@@ -533,6 +544,16 @@ const VendorDashboard = ({ token: propToken }) => {
               }}
             >
               {notification.message}
+            </div>
+          )}
+
+          {/* ADD THIS NEW CONDITION */}
+          {activeTab === "applications" && (
+            <div className={styles["tab-content"]}>
+              <ApplicationsManager 
+                token={token}
+                onNewApplication={() => setShowBusinessApplication(true)}
+              />
             </div>
           )}
 
@@ -968,11 +989,26 @@ const VendorDashboard = ({ token: propToken }) => {
             </div>
           )}
 
-          {["customers", "messages", "settings"].includes(activeTab) && (
+          {activeTab === "applications" && (
+            <div className={styles["tab-content"]}>
+              <ApplicationsManager 
+                token={token}
+                onNewApplication={() => setShowBusinessApplication(true)}
+              />
+            </div>
+          )}
+
+          {activeTab === "settings" && <VendorSettings token={token} />}
+
+          {activeTab === "customers" && <CustomerSection token={token} selectedBusiness={selectedBusiness} />}
+
+
+          {["messages"].includes(activeTab) && (
             <div className={styles["tab-content"]}>
               <h2 style={{ textTransform: "capitalize" }}>{activeTab} section coming soon...</h2>
             </div>
           )}
+
 
           {showBusinessModal && (
             <div className={styles["modal-overlay"]}>

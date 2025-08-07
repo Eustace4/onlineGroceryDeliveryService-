@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Business;
+use App\Models\User;
+use App\Models\Order;
 use Illuminate\Support\Facades\Auth;  
 use Illuminate\Support\Facades\Log;
 
@@ -148,6 +150,121 @@ public function myBusinesses()
     $businesses = $user->businesses()->select('id', 'name', 'email', 'phone', 'address')->get();
 
     return response()->json($businesses);
+}
+
+ /* Get all customers who have ordered from a specific business
+ */
+public function getCustomers($businessId)
+{
+    $user = auth()->user();
+    
+    // Check if user owns this business (for vendors) or is admin
+    if ($user->role === 'vendor') {
+        $business = $user->businesses()->find($businessId);
+        if (!$business) {
+            return response()->json(['message' => 'Unauthorized or business not found'], 403);
+        }
+    } elseif ($user->role !== 'admin') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    // Get all unique customers who have ordered from this business
+    $customers = User::whereHas('orders', function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    })
+    ->withCount(['orders as total_orders' => function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    }])
+    ->withSum(['orders as total_spent' => function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    }], 'total')
+    ->with(['orders' => function($query) use ($businessId) {
+        $query->where('business_id', $businessId)
+              ->orderBy('created_at', 'desc')
+              ->limit(1);
+    }])
+    ->get()
+    ->map(function($customer) use ($businessId) {
+        $firstOrder = $customer->orders()
+            ->where('business_id', $businessId)
+            ->orderBy('created_at', 'asc')
+            ->first();
+        
+        $lastOrder = $customer->orders()
+            ->where('business_id', $businessId)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        return [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'email' => $customer->email,
+            'phone' => $customer->phone,
+            'profile_picture' => $customer->profile_picture,
+            'total_orders' => $customer->total_orders ?? 0,
+            'total_spent' => round($customer->total_spent ?? 0, 2),
+            'last_order_date' => $lastOrder ? $lastOrder->created_at->format('Y-m-d') : null,
+            'first_order_date' => $firstOrder ? $firstOrder->created_at->format('Y-m-d') : null,
+            'days_since_first_order' => $firstOrder ? $firstOrder->created_at->diffInDays(now()) : null,
+            'days_since_last_order' => $lastOrder ? $lastOrder->created_at->diffInDays(now()) : null,
+        ];
+    });
+
+    return response()->json($customers);
+}
+
+/**
+ * Get customer statistics for a specific business
+ */
+public function getCustomerStats($businessId)
+{
+    $user = auth()->user();
+    
+    // Check if user owns this business (for vendors) or is admin
+    if ($user->role === 'vendor') {
+        $business = $user->businesses()->find($businessId);
+        if (!$business) {
+            return response()->json(['message' => 'Unauthorized or business not found'], 403);
+        }
+    } elseif ($user->role !== 'admin') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    // Total unique customers
+    $totalCustomers = User::whereHas('orders', function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    })->count();
+
+    // New customers this month
+    $newThisMonth = User::whereHas('orders', function($query) use ($businessId) {
+        $query->where('business_id', $businessId)
+              ->where('created_at', '>=', now()->startOfMonth());
+    })->count();
+
+    // Average order value
+    $averageOrderValue = Order::where('business_id', $businessId)
+        ->avg('total') ?? 0;
+
+    // Top spending customer
+    $topSpender = User::whereHas('orders', function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    })
+    ->withSum(['orders as total_spent' => function($query) use ($businessId) {
+        $query->where('business_id', $businessId);
+    }], 'total')
+    ->orderBy('total_spent', 'desc')
+    ->first();
+
+    return response()->json([
+        'totalCustomers' => $totalCustomers,
+        'newThisMonth' => $newThisMonth,
+        'averageOrderValue' => round($averageOrderValue, 2),
+        'topSpender' => $topSpender ? [
+            'id' => $topSpender->id,
+            'name' => $topSpender->name,
+            'total_spent' => round($topSpender->total_spent, 2)
+        ] : null
+    ]);
 }
 
 

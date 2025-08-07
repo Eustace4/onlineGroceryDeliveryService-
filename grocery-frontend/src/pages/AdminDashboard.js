@@ -32,6 +32,39 @@ const apiRequest = async (endpoint, options = {}) => {
   return response.json();
 };
 
+const testApplicationsAPI = async () => {
+  try {
+    console.log('=== Testing Applications API ===');
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    
+    console.log('Token present:', !!token);
+    console.log('User role:', user.role);
+    console.log('User ID:', user.id);
+    
+    const response = await fetch(`${API_BASE_URL}/admin/applications/all`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Applications data received:', data);
+      console.log('Number of applications:', data.length);
+    } else {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+    }
+  } catch (error) {
+    console.error('❌ Network error:', error);
+  }
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -65,6 +98,10 @@ export default function AdminDashboard() {
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [viewedItem, setViewedItem] = useState(null);
+  const [applicationFiles, setApplicationFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [viewingFile, setViewingFile] = useState(null);
+  const [fileModalType, setFileModalType] = useState(''); 
 
   // User Management Functions
   const [viewedUser, setViewedUser] = useState(null);
@@ -94,38 +131,67 @@ export default function AdminDashboard() {
     }
 
     fetchDashboardData();
+
+    setTimeout(() => {
+      testApplicationsAPI();
+    }, 1000); // Wait a second after page load
+
   }, [navigate]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // Fetch all data concurrently
-      const [usersData, businessesData, categoriesData, productsData] = await Promise.all([
+      console.log('🔄 Starting to fetch dashboard data...');
+
+      const results = await Promise.allSettled([
         apiRequest('/users'),
         apiRequest('/businesses'),
         apiRequest('/categories'),
-        apiRequest('/products')
+        apiRequest('/products'),
+        apiRequest('/admin/applications/all'),
+        apiRequest('/admin/applications/stats')
       ]);
+
+      const [usersRes, businessesRes, categoriesRes, productsRes, applicationsRes, statsRes] = results;
+
+      console.log('📊 API Results:');
+      console.log('Users:', usersRes.status);
+      console.log('Businesses:', businessesRes.status);
+      console.log('Categories:', categoriesRes.status);
+      console.log('Products:', productsRes.status);
+      console.log('Applications:', applicationsRes.status);
+      console.log('Stats:', statsRes.status);
+
+      // Handle applications specifically
+      if (applicationsRes.status === 'fulfilled') {
+        console.log('✅ Applications loaded:', applicationsRes.value);
+        setBusinessApplications(applicationsRes.value);
+      } else {
+        console.error('❌ Applications failed:', applicationsRes.reason);
+        setBusinessApplications([]);
+      }
+
+      if (statsRes.status === 'fulfilled') {
+        console.log('✅ Stats loaded:', statsRes.value);
+        setApplicationStats(statsRes.value);
+      } else {
+        console.error('❌ Stats failed:', statsRes.reason);
+        setApplicationStats({});
+      }
+
+      // Handle other data as before...
+      const usersData = usersRes.status === 'fulfilled' ? usersRes.value : [];
+      const businessesData = businessesRes.status === 'fulfilled' ? businessesRes.value : [];
+      const categoriesData = categoriesRes.status === 'fulfilled' ? categoriesRes.value : [];
+      const productsData = productsRes.status === 'fulfilled' ? productsRes.value : [];
 
       setUsers(usersData);
       setBusinesses(businessesData);
       setCategories(categoriesData);
       setProducts(productsData);
 
-      // Calculate dashboard metrics
-      const vendors = usersData.filter(u => u.role === 'vendor').length;
-      const customers = usersData.filter(u => u.role === 'customer').length;
-      setDashboardData({
-        totalOrders: 0, // You'll need to create an orders endpoint
-        activeCustomers: customers,
-        vendors: vendors,
-        productsInStock: productsData.length,
-        dailyRevenue: 0,
-        weeklyRevenue: 0,
-        monthlyRevenue: 0
-      });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('💥 Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -135,6 +201,163 @@ export default function AdminDashboard() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     navigate('/login');
+  };
+
+  const handleViewApplication = async (application) => {
+    try {
+      const detailedApp = await apiRequest(`/admin/applications/${application.id}`);
+      setSelectedApplication(detailedApp);
+      
+      // Fetch files for this application
+      setFilesLoading(true);
+      try {
+        const filesData = await apiRequest(`/admin/applications/${application.id}/files`);
+        setApplicationFiles(filesData.files || []);
+      } catch (error) {
+        console.error('Error fetching application files:', error);
+        setApplicationFiles([]);
+      } finally {
+        setFilesLoading(false);
+      }
+      
+      setModalType('viewApplication');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching application details:', error);
+    }
+  };
+
+  // File viewing functions:
+  const handleViewFile = (file) => {
+    // Add current file to history for back navigation
+    setFileViewHistory(prev => [...prev, { file, modalType: fileModalType }]);
+    
+    setViewingFile(file);
+    
+    if (file.is_image) {
+      setFileModalType('image');
+    } else if (file.mime_type === 'application/pdf') {
+      setFileModalType('pdf');
+    } else {
+      setFileModalType('document');
+    }
+    
+    // Don't change showModal or modalType if we're already in file view
+    if (modalType !== 'viewFile') {
+      setShowModal(true);
+      setModalType('viewFile');
+    }
+  };
+
+  const handleDownloadFile = async (file) => {
+    try {
+      if (file.download_url) {
+        // For documents with specific download URLs
+        const response = await fetch(file.download_url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error('Download failed');
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else if (file.url) {
+        // For storefront photos or direct URLs
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.filename;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    }
+  };
+
+  const handleGoBackInFileView = () => {
+    if (fileViewHistory.length > 0) {
+      const previous = fileViewHistory[fileViewHistory.length - 1];
+      setFileViewHistory(prev => prev.slice(0, -1));
+      
+      if (fileViewHistory.length === 1) {
+        // Going back to application view
+        setModalType('viewApplication');
+        setViewingFile(null);
+        setFileModalType('');
+      } else {
+        // Going back to previous file
+        const previousFile = fileViewHistory[fileViewHistory.length - 2];
+        setViewingFile(previousFile.file);
+        setFileModalType(previousFile.modalType);
+      }
+    } else {
+      // No history, go back to application view
+      setModalType('viewApplication');
+      setViewingFile(null);
+      setFileModalType('');
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleApproveApplication = async (applicationId) => {
+    try {
+      await apiRequest(`/admin/applications/${applicationId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ admin_notes: adminNotes })
+      });
+      // Refresh data
+      fetchDashboardData();
+      setShowModal(false);
+      setAdminNotes('');
+    } catch (error) {
+      console.error('Error approving application:', error);
+      alert('Failed to approve application');
+    }
+  };
+
+  const handleRejectApplication = async (applicationId) => {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
+    }
+    try {
+      await apiRequest(`/admin/applications/${applicationId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          reason: rejectionReason,
+          admin_notes: adminNotes 
+        })
+      });
+      // Refresh data
+      fetchDashboardData();
+      setShowModal(false);
+      setRejectionReason('');
+      setAdminNotes('');
+    } catch (error) {
+      console.error('Error rejecting application:', error);
+      alert('Failed to reject application');
+    }
   };
 
   const handleDeleteUser = async (userId) => {
@@ -148,12 +371,38 @@ export default function AdminDashboard() {
       }
     }
   };
+
   const closeModal = () => {
     setShowModal(false);
+    
+    // Clear ALL modal-related state
     setModalType('');
     setEditingItem(null);
     setFormData({});
     setViewedItem(null);
+    
+    // Clear file-related state
+    setViewingFile(null);
+    setFileModalType('');
+    setFileViewHistory([]);
+    
+    // Clear application-related state
+    setSelectedApplication(null);
+    setApplicationFiles([]);
+    setAdminNotes('');
+    setRejectionReason('');
+    
+    // Clear product-related state
+    setViewedProduct(null);
+    setProductModalType('');
+    setProductFormData({});
+    
+    // Clear user and business related state
+    setViewedUser(null);
+    setViewedBusiness(null);
+    setViewedProductsBusiness(null);
+    setBusinessProducts([]);
+    setProductsError(null);
   };
 
   // Business Management Functions
@@ -236,32 +485,37 @@ export default function AdminDashboard() {
   };
 
   const handleSubmitCategory = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingItem) {
-        // Update existing category
-        const updatedCategory = await apiRequest(`/categories/${editingItem.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData)
-        });
-        setCategories(categories.map(cat => 
-          cat.id === editingItem.id ? { ...cat, ...updatedCategory.category } : cat
-        ));
-      } else {
-        // Create new category
-        const newCategory = await apiRequest('/categories', {
-          method: 'POST',
-          body: JSON.stringify(formData)
-        });
-        setCategories([...categories, newCategory.category]);
-      }
-      setShowModal(false);
-      setFormData({});
-    } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Failed to save category');
+  e.preventDefault();
+  try {
+    if (editingItem) {
+      // Update existing category
+      const updatedCategory = await apiRequest(`/categories/${editingItem.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+      });
+      setCategories(categories.map(cat =>
+        cat.id === editingItem.id ? { ...cat, ...updatedCategory.category } : cat
+      ));
+    } else {
+      // Create new category
+      await apiRequest('/categories', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      });
+      
+      // Re-fetch categories to get the new one with full details (including created_at)
+      const categoriesData = await apiRequest('/categories');
+      setCategories(categoriesData);
     }
-  };
+
+    setShowModal(false);
+    setFormData({});
+  } catch (error) {
+    console.error('Error saving category:', error);
+    alert('Failed to save category');
+  }
+};
+
 
   const handleSubmitBusiness = async (e) => {
     e.preventDefault();
@@ -280,6 +534,18 @@ export default function AdminDashboard() {
       alert('Failed to update business');
     }
   };
+
+  const [businessApplications, setBusinessApplications] = useState([]);
+  const [applicationStats, setApplicationStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [fileViewHistory, setFileViewHistory] = useState([]);
 
   // --- Analytics State ---
   const [metrics, setMetrics] = useState(null);
@@ -325,6 +591,7 @@ export default function AdminDashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'users', label: 'User Management', icon: '👥' },
     { id: 'businesses', label: 'Business Management', icon: '🏪' },
+    { id: 'business-applications', label: 'Business Applications', icon: '📝' },
     { id: 'products', label: 'Product Management', icon: '🛒' },
     { id: 'categories', label: 'Category Management', icon: '🏷️' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
@@ -334,23 +601,37 @@ export default function AdminDashboard() {
 
   // Product Management Functions
   const handleViewProduct = (product) => {
-    setViewedProduct(product);
-    setProductModalType('view');
-    setShowModal(true);
+    // First clear any existing modal state
+    closeModal();
+    
+    // Then set the new product data
+    setTimeout(() => {
+      setViewedProduct(product);
+      setProductModalType('view');
+      setModalType('viewProduct');
+      setShowModal(true);
+    }, 10);
   };
 
   const handleEditProduct = (product) => {
-    setEditingItem(product);
-    setProductFormData({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      category_name: product.category?.name || '',
-      business_id: product.business?.id || product.business_id || '',
-    });
-    setProductModalType('edit');
-    setShowModal(true);
+    // First clear any existing modal state
+    closeModal();
+    
+    // Then set the new product data
+    setTimeout(() => {
+      setEditingItem(product);
+      setProductFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || '',
+        stock: product.stock || product.quantity || '',
+        category_name: product.category?.name || '',
+        business_id: product.business?.id || product.business_id || '',
+      });
+      setProductModalType('edit');
+      setModalType('editProduct');
+      setShowModal(true);
+    }, 10);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -366,10 +647,24 @@ export default function AdminDashboard() {
   };
 
   const handleAddProduct = () => {
-    setEditingItem(null);
-    setProductFormData({ name: '', description: '', price: '', stock: '', category_name: '', business_id: '' });
-    setProductModalType('add');
-    setShowModal(true);
+    // First clear any existing modal state
+    closeModal();
+    
+    // Then set the new product data
+    setTimeout(() => {
+      setEditingItem(null);
+      setProductFormData({ 
+        name: '', 
+        description: '', 
+        price: '', 
+        stock: '', 
+        category_name: '', 
+        business_id: '' 
+      });
+      setProductModalType('add');
+      setModalType('addProduct');
+      setShowModal(true);
+    }, 10);
   };
 
   const handleSubmitProduct = async (e) => {
@@ -649,6 +944,72 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderBusinessApplications = () => (
+    <div className="table-section">
+      <div className="section-header">
+        <h2>Business Applications</h2>
+        <div className="header-actions">
+          <div className="stats-summary">
+            <span className="stat-item">Pending: {applicationStats.pending || 0}</span>
+            <span className="stat-item">Approved: {applicationStats.approved || 0}</span>
+            <span className="stat-item">Rejected: {applicationStats.rejected || 0}</span>
+          </div>
+          <select 
+            className="filter-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Business Name</th>
+              <th>Applicant</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {businessApplications
+              .filter(app => filterStatus === '' || app.status === filterStatus)
+              .map(application => (
+              <tr key={application.id}>
+                <td>{application.id}</td>
+                <td>{application.name}</td>
+                <td>{application.user?.name}</td>
+                <td>{application.email}</td>
+                <td>
+                  <span className={`status-badge ${application.status}`}>
+                    {application.status}
+                  </span>
+                </td>
+                <td>{new Date(application.submitted_at).toLocaleDateString()}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button className="btn-view" onClick={() => handleViewApplication(application)}>
+                      Review
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   const renderCategories = () => (
     <div className="table-section">
       <div className="section-header">
@@ -812,6 +1173,8 @@ export default function AdminDashboard() {
         return renderUsers();
       case 'businesses':
         return renderBusinesses();
+      case 'business-applications':
+        return renderBusinessApplications();
       case 'products':
         return renderProducts();
       case 'categories':
@@ -825,59 +1188,327 @@ export default function AdminDashboard() {
     }
   };
 
+  
+
   // Modal rendering function
+  // Modal rendering function - FIXED VERSION
   const renderModal = () => {
     if (!showModal) return null;
 
-    // Product Modals
-    if (productModalType === 'view' && viewedProduct) {
-      const closeProductModal = () => {
-        setShowModal(false);
-        setTimeout(() => {
-          setViewedProduct(null);
-          setProductModalType('');
-        }, 200); // allow modal close animation if any
-      };
+    // Add this at the beginning of renderModal function
+    const renderApplicationReviewModal = () => {
+      if (modalType !== 'viewApplication' || !selectedApplication) return null;
+
       return (
-        <div className="modal-overlay" onClick={closeProductModal}>
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content large-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Business Application Review - {selectedApplication.name}</h3>
+              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
+            <div className="modal-body application-review">
+              {/* Basic application info */}
+              <div className="application-info">
+                <h4>Business Information</h4>
+                <div><strong>Name:</strong> {selectedApplication.name}</div>
+                <div><strong>Email:</strong> {selectedApplication.email}</div>
+                <div><strong>Phone:</strong> {selectedApplication.phone}</div>
+                <div><strong>Address:</strong> {selectedApplication.address}</div>
+                <div><strong>Applicant:</strong> {selectedApplication.user?.name}</div>
+                <div><strong>Status:</strong> 
+                  <span className={`status-badge ${selectedApplication.status}`}>
+                    {selectedApplication.status}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Enhanced documents section with file previews */}
+              <div className="documents-section">
+                <h4>Submitted Documents & Files</h4>
+                
+                {filesLoading ? (
+                  <div>Loading files...</div>
+                ) : applicationFiles.length === 0 ? (
+                  <div>No files found for this application.</div>
+                ) : (
+                  <div className="files-grid">
+                    {applicationFiles.map((file, index) => (
+                      <div key={index} className="file-item">
+                        <div className="file-header">
+                          <div className="file-icon">
+                            {file.is_image ? '🖼️' : file.mime_type === 'application/pdf' ? '📄' : '📎'}
+                          </div>
+                          <div className="file-info">
+                            <div className="file-label">{file.label}</div>
+                            <div className="file-details">
+                              <span className="file-name">{file.filename}</span>
+                              <span className="file-size">({formatFileSize(file.size)})</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Image thumbnail for image files */}
+                        {file.is_image && (
+                          <div className="file-thumbnail">
+                            <img 
+                              src={file.url} 
+                              alt={file.label}
+                              style={{
+                                width: '100%',
+                                height: '120px',
+                                objectFit: 'cover',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => handleViewFile(file)}
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="file-actions">
+                          <button 
+                            className="btn-view-file" 
+                            onClick={() => handleViewFile(file)}
+                          >
+                            {file.is_image ? 'View Image' : 'View'}
+                          </button>
+                          <button 
+                            className="btn-download-file" 
+                            onClick={() => handleDownloadFile(file)}
+                          >
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Review actions */}
+              {selectedApplication.status === 'pending' && (
+                <div className="review-actions">
+                  <div className="form-group">
+                    <label>Admin Notes (Optional)</label>
+                    <textarea
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      placeholder="Add any notes about this application..."
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Rejection Reason (if rejecting)</label>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Provide reason for rejection..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedApplication.rejection_reason && (
+                <div className="rejection-info">
+                  <h4>Rejection Reason</h4>
+                  <p>{selectedApplication.rejection_reason}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              {selectedApplication.status === 'pending' ? (
+                <>
+                  <button 
+                    className="btn-reject" 
+                    onClick={() => handleRejectApplication(selectedApplication.id)}
+                  >
+                    Reject Application
+                  </button>
+                  <button 
+                    className="btn-approve" 
+                    onClick={() => handleApproveApplication(selectedApplication.id)}
+                  >
+                    Approve & Create Business
+                  </button>
+                </>
+              ) : (
+                <button className="btn-cancel" onClick={() => setShowModal(false)}>
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // File viewing modal
+    const renderFileViewModal = () => {
+      if (modalType !== 'viewFile' || !viewingFile) return null;
+
+      return (
+        <div className="modal-overlay" onClick={(e) => {
+          // Only close on overlay click, not on content click
+          if (e.target === e.currentTarget) {
+            handleGoBackInFileView();
+          }
+        }}>
+          <div className="modal-content file-view-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="file-nav-section">
+                {(fileViewHistory.length > 0) && (
+                  <button 
+                    className="btn-back" 
+                    onClick={handleGoBackInFileView}                  
+                  >
+                    ← Back
+                  </button>
+                )}
+                <h3>{viewingFile.label}</h3>
+              </div>
+              
+              <div className="file-actions-header">
+                <button 
+                  className="btn-download" 
+                  onClick={() => handleDownloadFile(viewingFile)}    
+                >
+                  📥 Download
+                </button>
+                <button 
+                  className="modal-close" 
+                  onClick={closeModal}
+                  style={{
+                    background: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '18px'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="modal-body file-viewer">
+              {fileModalType === 'image' && (
+                <div style={{ textAlign: 'center' }}>
+                  <img 
+                    src={viewingFile.url} 
+                    alt={viewingFile.label}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML += '<p style="color: red;">Failed to load image</p>';
+                    }}
+                  />
+                </div>
+              )}
+              
+              {fileModalType === 'pdf' && (
+                <iframe
+                  src={viewingFile.url}
+                  title={viewingFile.label}
+                  onError={() => {
+                    alert('Failed to load PDF. Please try downloading instead.');
+                  }}
+                />
+              )}
+              
+              {fileModalType === 'document' && (
+                <div className="document-info">
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+                  <p>This file type cannot be previewed directly.</p>
+                  <p><strong>File:</strong> {viewingFile.filename}</p>
+                  <p><strong>Size:</strong> {formatFileSize(viewingFile.size)}</p>
+                  <p><strong>Type:</strong> {viewingFile.mime_type}</p>
+                  <button 
+                    className="btn-download-large" 
+                    onClick={() => handleDownloadFile(viewingFile)}
+                  >
+                    📥 Download File
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // Product View Modal
+    if (modalType === 'viewProduct' && viewedProduct) {
+      return (
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Product Details</h3>
-              <button className="modal-close" onClick={closeProductModal}>×</button>
+              <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
               <div><strong>ID:</strong> {viewedProduct.id}</div>
               <div><strong>Name:</strong> {viewedProduct.name}</div>
-              <div><strong>Category:</strong> {viewedProduct.category?.name || 'N/A'}</div>
-              <div><strong>Price:</strong> {viewedProduct.price}</div>
-              <div><strong>Stock:</strong> {viewedProduct.stock ?? viewedProduct.quantity ?? 'N/A'}</div>
-              <div><strong>Business:</strong> {viewedProduct.business?.name || viewedProduct.business_id || 'N/A'}</div>
               <div><strong>Description:</strong> {viewedProduct.description || 'N/A'}</div>
+              <div><strong>Category:</strong> {viewedProduct.category?.name || 'N/A'}</div>
+              <div><strong>Price:</strong> ₺{viewedProduct.price}</div>
+              <div><strong>Stock:</strong> {viewedProduct.stock ?? viewedProduct.quantity ?? 'N/A'}</div>
+              <div><strong>Business:</strong> {viewedProduct.business?.name || 'N/A'}</div>
+              <div><strong>Created:</strong> {viewedProduct.created_at ? new Date(viewedProduct.created_at).toLocaleString() : 'N/A'}</div>
+              {viewedProduct.image && (
+                <div>
+                  <strong>Image:</strong>
+                  <br />
+                  <img 
+                    src={viewedProduct.image} 
+                    alt={viewedProduct.name}
+                    style={{
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                      objectFit: 'cover',
+                      marginTop: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeProductModal}>Close</button>
+              <button className="btn-cancel" onClick={closeModal}>Close</button>
+              <button 
+                className="btn-edit" 
+                onClick={() => {
+                  closeModal();
+                  setTimeout(() => handleEditProduct(viewedProduct), 50);
+                }}
+              >
+                Edit Product
+              </button>
             </div>
           </div>
         </div>
       );
     }
 
-    if ((productModalType === 'edit' || productModalType === 'add') && (showModal)) {
+    // Product Add/Edit Modal
+    if ((modalType === 'addProduct' || modalType === 'editProduct')) {
       return (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{productModalType === 'add' ? 'Add New Product' : 'Edit Product'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <h3>{modalType === 'addProduct' ? 'Add New Product' : 'Edit Product'}</h3>
+              <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <form onSubmit={handleSubmitProduct}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Name</label>
+                  <label>Product Name</label>
                   <input
                     type="text"
                     value={productFormData.name || ''}
-                    onChange={e => setProductFormData({ ...productFormData, name: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, name: e.target.value})}
                     required
                   />
                 </div>
@@ -885,24 +1516,28 @@ export default function AdminDashboard() {
                   <label>Description</label>
                   <textarea
                     value={productFormData.description || ''}
-                    onChange={e => setProductFormData({ ...productFormData, description: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
+                    rows="3"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Price</label>
+                  <label>Price (₱)</label>
                   <input
                     type="number"
+                    step="0.01"
+                    min="0"
                     value={productFormData.price || ''}
-                    onChange={e => setProductFormData({ ...productFormData, price: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, price: e.target.value})}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Stock</label>
+                  <label>Stock Quantity</label>
                   <input
                     type="number"
+                    min="0"
                     value={productFormData.stock || ''}
-                    onChange={e => setProductFormData({ ...productFormData, stock: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, stock: e.target.value})}
                     required
                   />
                 </div>
@@ -910,12 +1545,14 @@ export default function AdminDashboard() {
                   <label>Category</label>
                   <select
                     value={productFormData.category_name || ''}
-                    onChange={e => setProductFormData({ ...productFormData, category_name: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, category_name: e.target.value})}
                     required
                   >
-                    <option value="">Select Category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    <option value="">Select a category</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -923,22 +1560,24 @@ export default function AdminDashboard() {
                   <label>Business</label>
                   <select
                     value={productFormData.business_id || ''}
-                    onChange={e => setProductFormData({ ...productFormData, business_id: e.target.value })}
+                    onChange={(e) => setProductFormData({...productFormData, business_id: e.target.value})}
                     required
                   >
-                    <option value="">Select Business</option>
-                    {businesses.map(biz => (
-                      <option key={biz.id} value={biz.id}>{biz.name}</option>
+                    <option value="">Select a business</option>
+                    {businesses.map(business => (
+                      <option key={business.id} value={business.id}>
+                        {business.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn-cancel" onClick={closeModal}>
                   Cancel
                 </button>
                 <button type="submit" className="btn-submit">
-                  {productModalType === 'add' ? 'Create' : 'Update'}
+                  {modalType === 'editProduct' ? 'Update Product' : 'Create Product'}
                 </button>
               </div>
             </form>
@@ -947,47 +1586,47 @@ export default function AdminDashboard() {
       );
     }
 
-    // ...existing code for user, business, and category modals...
-    if (modalType === 'viewUser' && viewedUser) {
-      return (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>User Details</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div><strong>ID:</strong> {viewedUser.id}</div>
-              <div><strong>Name:</strong> {viewedUser.name}</div>
-              <div><strong>Email:</strong> {viewedUser.email}</div>
-              <div><strong>Role:</strong> {viewedUser.role}</div>
-              <div><strong>Created:</strong> {new Date(viewedUser.created_at).toLocaleString()}</div>
-              {/* Add more fields as needed */}
-            </div>
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowModal(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      );
+    // CHECK FOR APPLICATION REVIEW MODAL FIRST
+    if (modalType === 'viewApplication') {
+      return renderApplicationReviewModal();
     }
 
+    // CHECK FOR FILE VIEW MODAL
+    if (modalType === 'viewFile') {
+      return renderFileViewModal();
+    }
+
+    // EXISTING MODAL TYPES
+    if (modalType === 'viewUser' && viewedUser) {
+    return (
+      <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>User Details</h3>
+            <button className="modal-close" onClick={closeModal}>×</button>
+          </div>
+          <div className="modal-body">
+            <div><strong>ID:</strong> {viewedUser.id}</div>
+            <div><strong>Name:</strong> {viewedUser.name}</div>
+            <div><strong>Email:</strong> {viewedUser.email}</div>
+            <div><strong>Role:</strong> {viewedUser.role}</div>
+            <div><strong>Created:</strong> {new Date(viewedUser.created_at).toLocaleString()}</div>
+          </div>
+          <div className="modal-footer">
+            <button className="btn-cancel" onClick={closeModal}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
     if (modalType === 'viewBusiness' && viewedBusiness) {
-      // Enhanced: Show business details AND products in one modal
-      const closeBusinessModal = () => {
-        setShowModal(false);
-        setTimeout(() => {
-          setViewedBusiness(null);
-          setViewedProductsBusiness(null);
-          setModalType('');
-        }, 200);
-      };
       return (
-        <div className="modal-overlay" onClick={closeBusinessModal}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Business Details</h3>
-              <button className="modal-close" onClick={closeBusinessModal}>×</button>
+              <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
               <div><strong>ID:</strong> {viewedBusiness.id}</div>
@@ -1039,14 +1678,15 @@ export default function AdminDashboard() {
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeBusinessModal}>Close</button>
+              <button className="btn-cancel" onClick={closeModal}>Close</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // ...existing code for category/business modals...
+
+    // Default form modals for categories and business editing
     return (
       <div className="modal-overlay" onClick={() => setShowModal(false)}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>

@@ -73,72 +73,71 @@ class AuthController extends Controller
     ]);
 }
     public function profile(Request $request)
-    {
-         $user = $request->user();
-
-        if (!$user) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
-        $user->profile_picture = $user->profile_picture 
-            ? asset('storage/' . $user->profile_picture)
-            : null;
-
-        return response()->json(['user' => $user]);
-    }
-
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully'
-        ]);
-    }
-
-     /*public function updateProfile(Request $request)
-    {
+{
         $user = $request->user();
 
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'current_password' => 'required_with:password',
-            'password' => 'sometimes|required|confirmed|min:8',
-        ]);
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
 
-        // If updating password, verify current password
-        if ($request->has('password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return response()->json([
-                    'message' => 'Current password is incorrect'
-                ], 422);
-            }
+    $user->profile_picture = $user->profile_picture 
+        ? asset('storage/' . $user->profile_picture)
+        : null;
+
+    return response()->json(['user' => $user]);
+}
+
+    public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+
+    return response()->json([
+        'message' => 'Logged out successfully'
+    ]);
+}
+
+     public function updateProfile(Request $request)
+{
+    $user = $request->user(); // Get the authenticated user
+
+    $request->validate([
+        'name' => 'sometimes|required|string|max:255',
+        'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+        'current_password' => 'required_with:password',
+        'password' => 'sometimes|required|confirmed|min:8',
+    ]);
+
+    // If updating password, verify current password
+    if ($request->has('password')) {
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect'
+            ], 422);
         }
+    }
 
-        // Update user data
-        $updateData = [];
-        
-        if ($request->has('name')) {
-            $updateData['name'] = $request->name;
-        }
-        
-        if ($request->has('email')) {
-            $updateData['email'] = $request->email;
-        }
-        
-        if ($request->has('password')) {
-            $updateData['password'] = Hash::make($request->password);
-        }
+    // Update user data
+    $updateData = [];
+    
+    if ($request->has('name')) {
+        $updateData['name'] = $request->name;
+    }
+    
+    if ($request->has('email')) {
+        $updateData['email'] = $request->email;
+    }
+    
+    if ($request->has('password')) {
+        $updateData['password'] = Hash::make($request->password);
+    }
 
-        $user->update($updateData);
+    $user->update($updateData);
 
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'user' => $user->fresh()
-        ]);
-     } */
-
+    return response()->json([
+        'message' => 'Profile updated successfully',
+        'user' => $user->fresh()
+    ]);
+}
     public function updateUserById(Request $request, $id)
 {
     $user = User::find($id);
@@ -167,9 +166,13 @@ class AuthController extends Controller
         $updateData['phone'] = $request->phone;
     }
 
-    if ($request->has('password')) {
+   if ($request->filled('password')) {
+        if (!Hash::check($request->input('current_password'), $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 422);
+        }
         $updateData['password'] = Hash::make($request->password);
     }
+
 
     $user->update($updateData);
 

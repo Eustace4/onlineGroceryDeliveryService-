@@ -15,10 +15,31 @@ class BusinessApplicationController extends Controller
      */
     public function store(Request $request)
     {
+        // Enhanced debugging
+        $debugInfo = [
+            'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'],
+            'CONTENT_TYPE' => $_SERVER['CONTENT_TYPE'] ?? 'not set',
+            'POST_DATA' => $_POST,
+            'FILES_DATA' => $_FILES,
+            'REQUEST_ALL' => $request->all(),
+            'HAS_FILES' => [
+                'logo' => $request->hasFile('logo'),
+                'business_license' => $request->hasFile('business_license'),
+                'tax_certificate' => $request->hasFile('tax_certificate'),
+                'owner_id_document' => $request->hasFile('owner_id_document'),
+                'health_safety_cert' => $request->hasFile('health_safety_cert'),
+                'address_proof' => $request->hasFile('address_proof'),
+                'storefront_photos' => $request->hasFile('storefront_photos'),
+            ]
+        ];
+        
+        file_put_contents(storage_path('logs/detailed_debug.log'), print_r($debugInfo, true));
+
         if (auth()->user()->role !== 'vendor') {
             return response()->json(['message' => 'Only vendors can submit business applications.'], 403);
         }
 
+        // Custom validation for storefront photos
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:business_applications,email',
@@ -32,14 +53,77 @@ class BusinessApplicationController extends Controller
             'owner_id_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'health_safety_cert' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'address_proof' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'storefront_photos' => 'required|array|min:2|max:5',
-            'storefront_photos.*' => 'image|mimes:jpeg,png,jpg|max:3072'
         ]);
 
+        // Add custom validation for storefront photos
+        $validator->after(function ($validator) use ($request) {
+            // Log what we're checking
+            $debugValidation = [
+                'hasFile' => $request->hasFile('storefront_photos'),
+                'files' => $request->hasFile('storefront_photos') ? count($request->file('storefront_photos')) : 0
+            ];
+            file_put_contents(storage_path('logs/validation_debug.log'), print_r($debugValidation, true));
+
+            if (!$request->hasFile('storefront_photos')) {
+                $validator->errors()->add('storefront_photos', 'Storefront photos are required');
+                return;
+            }
+
+            $photos = $request->file('storefront_photos');
+            
+            // Check if it's an array and has the right number of files
+            if (!is_array($photos)) {
+                $validator->errors()->add('storefront_photos', 'Storefront photos must be an array of files');
+                return;
+            }
+
+            $photoCount = count($photos);
+            if ($photoCount < 2) {
+                $validator->errors()->add('storefront_photos', 'At least 2 storefront photos are required');
+                return;
+            }
+
+            if ($photoCount > 5) {
+                $validator->errors()->add('storefront_photos', 'Maximum 5 storefront photos allowed');
+                return;
+            }
+
+            // Validate each photo
+            foreach ($photos as $index => $photo) {
+                if (!$photo || !$photo->isValid()) {
+                    $validator->errors()->add("storefront_photos.{$index}", 'Invalid file upload');
+                    continue;
+                }
+
+                // Check if it's actually a file
+                if (!is_object($photo) || !method_exists($photo, 'getClientOriginalExtension')) {
+                    $validator->errors()->add("storefront_photos.{$index}", 'Invalid file object');
+                    continue;
+                }
+
+                $extension = strtolower($photo->getClientOriginalExtension());
+                if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    $validator->errors()->add("storefront_photos.{$index}", 'File must be jpg, jpeg, or png');
+                }
+
+                if ($photo->getSize() > 3072 * 1024) { // 3MB in bytes
+                    $validator->errors()->add("storefront_photos.{$index}", 'File size must not exceed 3MB');
+                }
+            }
+        });
+
         if ($validator->fails()) {
+            // Enhanced error logging
+            $errors = $validator->errors()->toArray();
+            file_put_contents(storage_path('logs/validation_errors.log'), print_r($errors, true));
+            
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $errors,
+                'debug_info' => [
+                    'has_storefront_photos' => $request->hasFile('storefront_photos'),
+                    'storefront_photos_count' => $request->hasFile('storefront_photos') ? count($request->file('storefront_photos')) : 0
+                ]
             ], 422);
         }
 
@@ -132,9 +216,35 @@ class BusinessApplicationController extends Controller
             'owner_id_document' => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'health_safety_cert' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'address_proof' => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'storefront_photos' => 'sometimes|array|min:2|max:5',
-            'storefront_photos.*' => 'image|mimes:jpeg,png,jpg|max:3072'
         ]);
+
+        // Add custom validation for storefront photos if they're being updated
+        $validator->after(function ($validator) use ($request) {
+            if ($request->hasFile('storefront_photos')) {
+                $photos = $request->file('storefront_photos');
+                
+                if (!is_array($photos) || count($photos) < 2 || count($photos) > 5) {
+                    $validator->errors()->add('storefront_photos', 'You must upload between 2 and 5 storefront photos');
+                    return;
+                }
+
+                foreach ($photos as $index => $photo) {
+                    if (!$photo->isValid()) {
+                        $validator->errors()->add("storefront_photos.{$index}", 'Invalid file upload');
+                        continue;
+                    }
+
+                    $extension = $photo->getClientOriginalExtension();
+                    if (!in_array(strtolower($extension), ['jpg', 'jpeg', 'png'])) {
+                        $validator->errors()->add("storefront_photos.{$index}", 'File must be jpg, jpeg, or png');
+                    }
+
+                    if ($photo->getSize() > 3072 * 1024) {
+                        $validator->errors()->add("storefront_photos.{$index}", 'File size must not exceed 3MB');
+                    }
+                }
+            }
+        });
 
         if ($validator->fails()) {
             return response()->json([

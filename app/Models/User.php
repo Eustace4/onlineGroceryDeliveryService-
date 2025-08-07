@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Order;
 //use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 
@@ -54,6 +55,10 @@ class User extends Authenticatable
     public function assignedOrders()
     {
         return $this->hasMany(Order::class, 'rider_id');
+    }
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id');
     }
 
 }

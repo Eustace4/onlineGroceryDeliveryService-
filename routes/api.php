@@ -15,6 +15,8 @@ use App\Http\Controllers\RiderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\BusinessApplicationController;
+use App\Http\Controllers\AdminBusinessApplicationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,7 +42,8 @@ Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessP
 Route::middleware('auth:sanctum')->group(function () {
     // Admin analytics/metrics
     Route::get('/admin/metrics', [AdminController::class, 'getMetrics']);
-
+    
+    // Admin business application routes - MOVED ABOVE other admin routes
     Route::prefix('admin/applications')->group(function () {
         Route::get('/pending', [AdminBusinessApplicationController::class, 'pendingApplications']);
         Route::get('/all', [AdminBusinessApplicationController::class, 'allApplications']);
@@ -49,8 +52,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/approve', [AdminBusinessApplicationController::class, 'approveApplication']);
         Route::post('/{id}/reject', [AdminBusinessApplicationController::class, 'rejectApplication']);
         Route::post('/{id}/notes', [AdminBusinessApplicationController::class, 'addNotes']);
-        Route::get('/{id}/documents/{type}', [AdminBusinessApplicationController::class, 'downloadDocument']);
+         Route::get('/{applicationId}/download/{documentType}', [AdminBusinessApplicationController::class, 'downloadDocument'])
+            ->name('admin.application.download-document');
         Route::get('/{id}/storefront-photos', [AdminBusinessApplicationController::class, 'viewStorefrontPhotos']);
+        // Add this line inside your Route::prefix('admin/applications')->group(function () {
+        Route::get('/{applicationId}/download-storefront/{photoIndex}', [AdminBusinessApplicationController::class, 'downloadStorefrontPhoto'])
+            ->name('admin.application.download-storefront-photo');
+         // NEW: File viewing routes
+        Route::get('/{id}/files', [AdminBusinessApplicationController::class, 'getApplicationFiles']);
+        Route::get('/{applicationId}/view/{documentType}', [AdminBusinessApplicationController::class, 'viewDocument'])
+            ->name('admin.application.view-document');
     });
 
     // Business Application Routes (for vendors)
@@ -61,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [BusinessApplicationController::class, 'update']);
         Route::delete('/{id}', [BusinessApplicationController::class, 'destroy']);
     });
+    
     // Auth controller routes
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -72,7 +84,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     // Product controller routes
-    
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
@@ -86,10 +97,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/businesses/{id}', [BusinessController::class, 'destroy']);
     // Add this inside your Route::middleware(...) group
     Route::get('/vendor/businesses', [BusinessController::class, 'indexForVendor']);
-
     
-    // Business products - use only one route
-    //Route::get('/businesses/{id}/products', [ProductController::class, 'getBusinessProducts']);
+    // Admin route for business products
+    Route::get('/businesses/{id}/products', [AdminController::class, 'getBusinessProducts']);
 
     // Categories
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -104,7 +114,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-orders', [OrderController::class, 'myOrders']);
     Route::get('/businesses/{id}/orders', [OrderController::class, 'getBusinessOrders']);
     Route::put('/orders/{orderId}/status', [OrderController::class, 'updateStatus']);
-
 
     // Addresses
     Route::put('/addresses/{id}', [AddressController::class, 'update']);
@@ -133,4 +142,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/upload-picture', [ProfileController::class, 'uploadProfilePicture']);
     Route::delete('/profile/remove-picture', [ProfileController::class, 'removeProfilePicture']);
 
+    // Customer management routes (add inside Route::middleware('auth:sanctum')->group)
+    Route::get('/businesses/{id}/customers', [BusinessController::class, 'getCustomers']);
+    Route::get('/businesses/{id}/customer-stats', [BusinessController::class, 'getCustomerStats']);
+    
+    Route::put('/profile/update', [AuthController::class, 'updateProfile']);
 });
