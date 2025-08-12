@@ -74,49 +74,83 @@ class ProductController extends Controller
     }
 
 
+ 
+// ProductController.php - Fixed update method
+
     public function update(Request $request, $id)
-    {
-        $user = Auth::user();
-        $product = Product::findOrFail($id);
+{
+    $user = Auth::user();
+    $product = Product::findOrFail($id);
 
-        // Check vendor owns the business the product belongs to
-        if ($user->role === 'vendor' && !$user->businesses()->where('id', $product->business_id)->exists()) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|numeric',
-            'stock' => 'sometimes|integer',
-            'category_name' => 'sometimes|string', // If you want to accept category by name for update
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        // If category_name is provided, find the category and update category_id
-        if ($request->has('category_name')) {
-            $category = Category::where('name', $request->category_name)->first();
-            if (!$category) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
-            $product->category_id = $category->id;
-        }
-
-        // Handle image update
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
-            $product->image = $request->file('image')->store('product_images', 'public');
-        }
-
-        // Update other fields
-        $product->fill($request->except(['image', 'category_name']));
-        $product->save();
-
-        return response()->json(['message' => 'Product updated', 'product' => $product]);
+    // Check authorization
+    if ($user->role === 'vendor' && !$user->businesses()->where('id', $product->business_id)->exists()) {
+        return response()->json(['message' => 'Forbidden'], 403);
     }
+
+    if (!in_array($user->role, ['admin', 'vendor'])) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    // Log what we received
+    \Log::info('Product update request data:', $request->all());
+    \Log::info('Files received:', $request->allFiles());
+    \Log::info('Updating product ID: ' . $id);
+
+    // Validation
+    $validated = $request->validate([
+        'name' => 'sometimes|string|max:255',
+        'description' => 'sometimes|nullable|string',
+        'price' => 'sometimes|numeric|min:0',
+        'stock' => 'sometimes|integer|min:0',
+        'category_name' => 'sometimes|string',
+        'business_id' => 'sometimes|exists:businesses,id',
+        'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
+
+    \Log::info('Validated data:', $validated);
+
+    // Handle category by name
+    if (isset($validated['category_name'])) {
+        $category = Category::where('name', $validated['category_name'])->first();
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+        $validated['category_id'] = $category->id;
+        unset($validated['category_name']); // Remove this from update data
+        
+        \Log::info('Found category ID: ' . $category->id . ' for name: ' . $request->category_name);
+    }
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        \Log::info('Image file detected, processing upload...');
+        
+        // Delete old image if exists
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            \Log::info('Deleting old image: ' . $product->image);
+            Storage::disk('public')->delete($product->image);
+        }
+        
+        // Store new image
+        $imagePath = $request->file('image')->store('product_images', 'public');
+        $validated['image'] = $imagePath;
+        
+        \Log::info('New image stored at: ' . $imagePath);
+    }
+
+    // Update the product
+    $product->update($validated);
+    
+    \Log::info('Product updated successfully');
+
+    // Return updated product with relationships
+    $product->load('category', 'business');
+
+    return response()->json([
+        'message' => 'Product updated successfully',
+        'product' => $product
+    ]);
+}
 
 
     // Delete product

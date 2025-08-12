@@ -1,34 +1,91 @@
-[2025-08-12 05:41:55] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:42:01] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:42:03] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:42:04] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:48:16] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:48:17] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:49:03] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:49:04] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:49:25] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:49:27] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:52:32] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:52:33] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:57:10] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:57:11] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:26] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:34] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:38] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:43] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:44] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 05:58:45] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:00:27] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:00:28] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:02:12] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:02:14] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:05:13] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:05:15] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:05:22] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:05:23] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:07:42] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:07:45] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:07:47] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:07:48] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:11:23] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
-[2025-08-12 06:11:24] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:31:19] local.INFO: Product update request data:  
+[2025-08-12 10:31:19] local.INFO: Files received:  
+[2025-08-12 10:31:19] local.INFO: Updating product ID: 2  
+[2025-08-12 10:31:19] local.INFO: Validated data:  
+[2025-08-12 10:31:19] local.INFO: Product updated successfully  
+[2025-08-12 10:37:27] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:32] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:34] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:36] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:37] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:37] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:38] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:37:38] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:40:55] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:40:59] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:01] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:03] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:05] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:09] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:13] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:14] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:17] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:18] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:18] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:19] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:20] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:20] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:21] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:21] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:23] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:28] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:30] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:32] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:35] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:36] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:36] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:41:37] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:45:48] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:45:49] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:45:54] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:45:55] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:46:06] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:46:07] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-12 10:46:37] local.INFO: Product update request data: {"name":"cupcakeS","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","_method":"PUT"} 
+[2025-08-12 10:46:37] local.INFO: Files received:  
+[2025-08-12 10:46:37] local.INFO: Updating product ID: 2  
+[2025-08-12 10:46:39] local.INFO: Validated data: {"name":"cupcakeS","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1"} 
+[2025-08-12 10:46:39] local.INFO: Found category ID: 4 for name: snacks  
+[2025-08-12 10:46:40] local.INFO: Product updated successfully  
+[2025-08-12 10:46:47] local.INFO: Product update request data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","_method":"PUT"} 
+[2025-08-12 10:46:47] local.INFO: Files received:  
+[2025-08-12 10:46:47] local.INFO: Updating product ID: 2  
+[2025-08-12 10:46:47] local.INFO: Validated data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1"} 
+[2025-08-12 10:46:47] local.INFO: Found category ID: 4 for name: snacks  
+[2025-08-12 10:46:47] local.INFO: Product updated successfully  
+[2025-08-12 10:47:05] local.INFO: Product update request data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","_method":"PUT","image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php66F8.tmp"}} 
+[2025-08-12 10:47:05] local.INFO: Files received: {"image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php66F8.tmp"}} 
+[2025-08-12 10:47:05] local.INFO: Updating product ID: 2  
+[2025-08-12 10:47:06] local.INFO: Validated data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php66F8.tmp"}} 
+[2025-08-12 10:47:06] local.INFO: Found category ID: 4 for name: snacks  
+[2025-08-12 10:47:06] local.INFO: Image file detected, processing upload...  
+[2025-08-12 10:47:06] local.INFO: Deleting old image: product_images/kGAyA9ebjBMK0uDLZky67BRliBj8W4thmCo6HXHU.png  
+[2025-08-12 10:47:06] local.INFO: New image stored at: product_images/3Fl2ACNPhay5yDkOqS9hRQYnn1FPZlO3AU1NSMT1.png  
+[2025-08-12 10:47:06] local.INFO: Product updated successfully  
+[2025-08-12 10:47:20] local.INFO: Product update request data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","_method":"PUT","image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\phpAAC8.tmp"}} 
+[2025-08-12 10:47:20] local.INFO: Files received: {"image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\phpAAC8.tmp"}} 
+[2025-08-12 10:47:20] local.INFO: Updating product ID: 2  
+[2025-08-12 10:47:20] local.INFO: Validated data: {"name":"cupcake","description":"sweet","price":"5.99","stock":"44","category_name":"snacks","business_id":"1","image":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\phpAAC8.tmp"}} 
+[2025-08-12 10:47:20] local.INFO: Found category ID: 4 for name: snacks  
+[2025-08-12 10:47:20] local.INFO: Image file detected, processing upload...  
+[2025-08-12 10:47:20] local.INFO: Deleting old image: product_images/3Fl2ACNPhay5yDkOqS9hRQYnn1FPZlO3AU1NSMT1.png  
+[2025-08-12 10:47:20] local.INFO: New image stored at: product_images/QTY7sW6Sgn4joRcTkUjdPzAugqC12EGkHlMrOI58.png  
+[2025-08-12 10:47:20] local.INFO: Product updated successfully  
+[2025-08-12 10:47:36] local.INFO: Business update request data: {"name":"New Business Name","email":"fresh@example.com","address":"New AddressSS","phone":"08012345678","_method":"PUT"} 
+[2025-08-12 10:47:36] local.INFO: Files received:  
+[2025-08-12 10:47:36] local.INFO: Validated data: {"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New AddressSS"} 
+[2025-08-12 10:47:36] local.INFO: Business updated successfully: {"id":1,"vendor_id":3,"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New AddressSS","status":"active","application_id":null,"logo":"logos/FxnF5KHQIIiV1i1RZ9Ds65KdLw37WoWRRWsskLOi.jpg","created_at":"2025-07-02T12:49:45.000000Z","updated_at":"2025-08-12T10:47:36.000000Z"} 
+[2025-08-12 10:47:53] local.INFO: Business update request data: {"name":"New Business Name","email":"fresh@example.com","address":"New Address","phone":"08012345678","_method":"PUT","logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php2AB7.tmp"}} 
+[2025-08-12 10:47:53] local.INFO: Files received: {"logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php2AB7.tmp"}} 
+[2025-08-12 10:47:54] local.INFO: Validated data: {"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New Address","logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php2AB7.tmp"}} 
+[2025-08-12 10:47:54] local.INFO: Logo file detected, processing upload...  
+[2025-08-12 10:47:54] local.INFO: Deleting old logo: logos/FxnF5KHQIIiV1i1RZ9Ds65KdLw37WoWRRWsskLOi.jpg  
+[2025-08-12 10:47:54] local.INFO: New logo stored at: business_logos/GRX7lgeMGBzyhb78hxkSjH4BhVQLTgS2tq6NWg7X.png  
+[2025-08-12 10:47:54] local.INFO: Business updated successfully: {"id":1,"vendor_id":3,"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New Address","status":"active","application_id":null,"logo":"business_logos/GRX7lgeMGBzyhb78hxkSjH4BhVQLTgS2tq6NWg7X.png","created_at":"2025-07-02T12:49:45.000000Z","updated_at":"2025-08-12T10:47:54.000000Z"} 
+[2025-08-12 10:48:11] local.INFO: Business update request data: {"name":"New Business Name","email":"fresh@example.com","address":"New Address","phone":"08012345678","_method":"PUT","logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php726F.tmp"}} 
+[2025-08-12 10:48:11] local.INFO: Files received: {"logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php726F.tmp"}} 
+[2025-08-12 10:48:11] local.INFO: Validated data: {"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New Address","logo":{"Illuminate\\Http\\UploadedFile":"C:\\Users\\User\\AppData\\Local\\Temp\\php726F.tmp"}} 
+[2025-08-12 10:48:11] local.INFO: Logo file detected, processing upload...  
+[2025-08-12 10:48:12] local.INFO: Deleting old logo: business_logos/GRX7lgeMGBzyhb78hxkSjH4BhVQLTgS2tq6NWg7X.png  
+[2025-08-12 10:48:12] local.INFO: New logo stored at: business_logos/c7KrBPU8opgqdJjpFwNcBtuhYkJGQ82skLT8EpRP.jpg  
+[2025-08-12 10:48:12] local.INFO: Business updated successfully: {"id":1,"vendor_id":3,"name":"New Business Name","email":"fresh@example.com","phone":"08012345678","address":"New Address","status":"active","application_id":null,"logo":"business_logos/c7KrBPU8opgqdJjpFwNcBtuhYkJGQ82skLT8EpRP.jpg","created_at":"2025-07-02T12:49:45.000000Z","updated_at":"2025-08-12T10:48:12.000000Z"} 

@@ -487,16 +487,25 @@ export default function AdminDashboard() {
   };
 
   const handleEditBusiness = (business) => {
+    console.log('✏️ Starting business edit for:', business);
     setEditingItem(business);
     setFormData({
+      name: business.name || '',
+      email: business.email || '',
+      address: business.address || '',
+      phone: business.phone || '',
+      logo: business.logo || '', // Keep the current logo path
+      logoFile: null // Reset file input
+    });
+    setModalType('editBusiness');
+    setShowModal(true);
+    console.log('📝 Set form data:', {
       name: business.name,
       email: business.email,
       address: business.address,
       phone: business.phone,
       logo: business.logo
     });
-    setModalType('editBusiness');
-    setShowModal(true);
   };
   // Category Management Functions
 
@@ -547,27 +556,60 @@ export default function AdminDashboard() {
 };
 
 
- const handleSubmitBusiness = async (e) => {
+  const handleSubmitBusiness = async (e) => {
     e.preventDefault();
 
     try {
+      console.log('🔄 Starting business update...');
+      console.log('📝 Form data:', formData);
+      console.log('🏢 Editing item:', editingItem);
+      
+      const token = localStorage.getItem('auth_token');
+      
+      // Always use FormData for consistency
       const formDataToSend = new FormData();
-
+      
       // Append text fields
       formDataToSend.append('name', formData.name || '');
       formDataToSend.append('email', formData.email || '');
       formDataToSend.append('address', formData.address || '');
       formDataToSend.append('phone', formData.phone || '');
-
+      
       // Append logo file if user selected one
       if (formData.logoFile) {
+        console.log('📷 Logo file selected:', formData.logoFile.name, formData.logoFile.size);
         formDataToSend.append('logo', formData.logoFile);
+      } else {
+        console.log('❌ No logo file selected');
       }
 
-      const updatedBusiness = await apiRequest(`/businesses/${editingItem.id}`, {
-        method: 'PUT',
+      // Log what we're sending
+      console.log('📤 Sending FormData with:');
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+
+      formDataToSend.append('_method', 'PUT');
+      const response = await fetch(`${API_BASE_URL}/businesses/${editingItem.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData
+        },
         body: formDataToSend
       });
+
+      console.log('📨 Response status:', response.status);
+      console.log('📨 Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedBusiness = await response.json();
+      console.log('✅ Updated business data:', updatedBusiness);
 
       setBusinesses(businesses.map(business =>
         business.id === editingItem.id
@@ -577,9 +619,12 @@ export default function AdminDashboard() {
 
       setShowModal(false);
       setFormData({});
+      
+      console.log('✅ Business update completed successfully');
+      
     } catch (error) {
-      console.error('Error updating business:', error);
-      alert('Failed to update business');
+      console.error('💥 Error updating business:', error);
+      alert('Failed to update business: ' + error.message);
     }
   };
 
@@ -671,6 +716,8 @@ export default function AdminDashboard() {
   };
 
   const handleEditProduct = (product) => {
+    console.log('✏️ Starting product edit for:', product);
+    
     // First clear any existing modal state
     closeModal();
     
@@ -684,11 +731,22 @@ export default function AdminDashboard() {
         stock: product.stock || product.quantity || '',
         category_name: product.category?.name || '',
         business_id: product.business?.id || product.business_id || '',
-        image: product.image || ''
+        image: product.image || '', // Keep current image path
+        imageFile: null // Reset file input
       });
       setProductModalType('edit');
       setModalType('editProduct');
       setShowModal(true);
+      
+      console.log('📝 Set product form data:', {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock: product.stock || product.quantity,
+        category_name: product.category?.name,
+        business_id: product.business?.id || product.business_id,
+        image: product.image
+      });
     }, 10);
   };
 
@@ -715,43 +773,114 @@ export default function AdminDashboard() {
 
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
+    
     try {
+      console.log('🔄 Starting product submission...');
+      console.log('📝 Product form data:', productFormData);
+      console.log('🎭 Modal type:', productModalType);
+      console.log('✏️ Editing item:', editingItem);
+      
+      const token = localStorage.getItem('auth_token');
       const formDataToSend = new FormData();
       
-      // Append all text fields
-      Object.keys(productFormData).forEach(key => {
-        if (key !== 'imageFile' && productFormData[key]) {
-          formDataToSend.append(key, productFormData[key]);
-        }
-      });
+      // Add all text fields
+      if (productFormData.name) {
+        formDataToSend.append('name', productFormData.name);
+        console.log('📝 Added name:', productFormData.name);
+      }
+      if (productFormData.description) {
+        formDataToSend.append('description', productFormData.description);
+        console.log('📝 Added description:', productFormData.description);
+      }
+      if (productFormData.price) {
+        formDataToSend.append('price', productFormData.price);
+        console.log('💰 Added price:', productFormData.price);
+      }
+      if (productFormData.stock) {
+        formDataToSend.append('stock', productFormData.stock);
+        console.log('📦 Added stock:', productFormData.stock);
+      }
+      if (productFormData.category_name) {
+        formDataToSend.append('category_name', productFormData.category_name);
+        console.log('🏷️ Added category:', productFormData.category_name);
+      }
+      if (productFormData.business_id) {
+        formDataToSend.append('business_id', productFormData.business_id);
+        console.log('🏢 Added business_id:', productFormData.business_id);
+      }
       
-      // Append image file if selected
+      // Add image file if selected
       if (productFormData.imageFile) {
         formDataToSend.append('image', productFormData.imageFile);
+        console.log('🖼️ Added image file:', productFormData.imageFile.name, productFormData.imageFile.size);
+      } else {
+        console.log('❌ No image file selected');
       }
 
+      // Log what we're sending
+      console.log('📤 Sending FormData with:');
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+
+      let url, method;
       if (productModalType === 'edit' && editingItem) {
-        const updatedProduct = await apiRequest(`/products/${editingItem.id}`, {
-          method: 'PUT',
-          body: formDataToSend,
-          headers: {} // Remove Content-Type to let browser set it for FormData
-        });
-        setProducts(products.map(prod => prod.id === editingItem.id ? { ...prod, ...updatedProduct.product } : prod));
-      } else if (productModalType === 'add') {
-        const newProduct = await apiRequest('/products', {
-          method: 'POST',
-          body: formDataToSend,
-          headers: {} // Remove Content-Type to let browser set it for FormData
-        });
-        setProducts([...products, newProduct.product]);
+        url = `${API_BASE_URL}/products/${editingItem.id}`;
+        method = 'POST'; // must be POST for FormData with files
+        formDataToSend.append('_method', 'PUT'); // Laravel method spoofing
+        console.log('✏️ UPDATING product with ID:', editingItem.id);
+      } else {
+        url = `${API_BASE_URL}/products`;
+        method = 'POST';
+        console.log('➕ CREATING new product');
+      }
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData
+        },
+        body: formDataToSend
+      });
+
+      console.log('📨 Response status:', response.status);
+      console.log('📨 Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Server response:', result);
+
+      if (productModalType === 'edit' && editingItem) {
+        // Update existing product in list
+        setProducts(products.map(prod => 
+          prod.id === editingItem.id 
+            ? { ...prod, ...result.product } 
+            : prod
+        ));
+        console.log('✅ Updated product in list');
+      } else {
+        // Add new product to list
+        setProducts([...products, result.product]);
+        console.log('✅ Added new product to list');
       }
       
+      // Close modal and reset state
       setShowModal(false);
       setProductFormData({});
       setEditingItem(null);
+      setProductModalType('');
+      
+      console.log('✅ Product operation completed successfully');
+      
     } catch (error) {
-      console.error('Error saving product:', error);
-      alert('Failed to save product');
+      console.error('💥 Error with product operation:', error);
+      alert('Failed to save product: ' + error.message);
     }
   };
 

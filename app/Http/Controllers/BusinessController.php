@@ -97,23 +97,49 @@ public function update(Request $request, $id)
         return response()->json(['message' => 'You can only update your own business.'], 403);
     }
 
+    // Log what we received
+    \Log::info('Business update request data:', $request->all());
+    \Log::info('Files received:', $request->allFiles());
+
     $validated = $request->validate([
-        'name' => 'string|max:255',
-        'email' => 'email|nullable',
-        'phone' => 'nullable|string|max:20',
-        'address' => 'nullable|string',
-        'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+        'name' => 'sometimes|string|max:255',
+        'email' => 'sometimes|email|nullable',
+        'phone' => 'sometimes|nullable|string|max:20',
+        'address' => 'sometimes|nullable|string',
+        'logo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,gif|max:2048'
     ]);
 
-    // Save logo file if present
+    \Log::info('Validated data:', $validated);
+
+    // Handle logo upload
     if ($request->hasFile('logo')) {
-        $path = $request->file('logo')->store('logos', 'public');
-        $validated['logo'] = $path;
+        \Log::info('Logo file detected, processing upload...');
+        
+        // Delete old logo if it exists
+        if ($business->logo && \Storage::disk('public')->exists($business->logo)) {
+            \Log::info('Deleting old logo: ' . $business->logo);
+            \Storage::disk('public')->delete($business->logo);
+        }
+        
+        // Store new logo
+        $logoPath = $request->file('logo')->store('business_logos', 'public');
+        $validated['logo'] = $logoPath;
+        
+        \Log::info('New logo stored at: ' . $logoPath);
     }
 
+    // Update the business
     $business->update($validated);
+    
+    \Log::info('Business updated successfully:', $business->toArray());
 
-    return response()->json(['message' => 'Business updated successfully.', 'business' => $business]);
+    // Load fresh data with relationships
+    $business->load('vendor');
+
+    return response()->json([
+        'message' => 'Business updated successfully.',
+        'business' => $business
+    ]);
 }
 
 public function destroy($id)
