@@ -31,7 +31,40 @@
   margin-bottom: 30px;
   flex-wrap: wrap;
   gap: 20px;
+  /* Add these new styles */
+  padding: 2rem;
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color: white;
+  border-radius: 0 0 20px 20px; /* Only bottom corners rounded */
+  margin: 0 0 30px 0; /* Remove negative margins */
 }
+
+/* Fix the profile-info positioning */
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.profile-info h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Space between icon and text */
+}
+
+.profile-subtitle {
+  margin: 0;
+  opacity: 0.9;
+  color: white;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
 
 .orders-stats {
   display: flex;
@@ -223,7 +256,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #007bff;
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   color: white;
   border: none;
   padding: 6px 12px;

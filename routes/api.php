@@ -95,11 +95,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/businesses/{id}', [BusinessController::class, 'show']);
     Route::put('/businesses/{id}', [BusinessController::class, 'update']);
     Route::delete('/businesses/{id}', [BusinessController::class, 'destroy']);
+    Route::delete('/businesses/{id}/remove-logo', [BusinessController::class, 'removeLogo']);
     // Add this inside your Route::middleware(...) group
     Route::get('/vendor/businesses', [BusinessController::class, 'indexForVendor']);
     
     // Admin route for business products
-    Route::get('/businesses/{id}/products', [AdminController::class, 'getBusinessProducts']);
+    Route::get('/admin/businesses/{id}/products', [AdminController::class, 'getBusinessProducts']);
 
     // Categories
     Route::post('/categories', [CategoryController::class, 'store']);

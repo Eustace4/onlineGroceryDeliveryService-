@@ -1,5 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  BarChart3, 
+  Users, 
+  Store, 
+  FileText, 
+  ShoppingCart, 
+  Tag, 
+  TrendingUp, 
+  Settings,
+  LogOut,
+  User,
+  Package,
+  DollarSign,
+  Clock,
+  XCircle,
+  AlertTriangle,
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Search,
+  Filter,
+  CheckCircle,
+  X,
+  Download,
+  ArrowLeft
+} from 'lucide-react';
 import './AdminDashboard.css';
 
 // API configuration
@@ -73,6 +100,8 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  const [logoEdit, setLogoEdit] = useState({ show: false, business: null });
+
 
   // State for dashboard data
   const [dashboardData, setDashboardData] = useState({
@@ -196,6 +225,10 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+  const openEditLogoModal = (business) => {
+    setLogoEdit({ show: true, business });
+  };
+
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
@@ -226,6 +259,37 @@ export default function AdminDashboard() {
       console.error('Error fetching application details:', error);
     }
   };
+
+  const requestDelete = (type, id) => {
+    setDeleteConfirm({ show: true, type, id });
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const { type, id } = deleteConfirm;
+
+    try {
+      if (type === 'user') {
+        await apiRequest(`/users/${id}`, { method: 'DELETE' });
+        setUsers(users.filter(u => u.id !== id));
+      } else if (type === 'business') {
+        await apiRequest(`/businesses/${id}`, { method: 'DELETE' });
+        setBusinesses(businesses.filter(b => b.id !== id));
+      } else if (type === 'product') {
+        await apiRequest(`/products/${id}`, { method: 'DELETE' });
+        setProducts(products.filter(p => p.id !== id));
+      } else if (type === 'category') {
+        await apiRequest(`/categories/${id}`, { method: 'DELETE' });
+        setCategories(categories.filter(c => c.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting:', error);
+      alert('Failed to delete');
+    } finally {
+      setDeleteConfirm({ show: false, type: '', id: null });
+    }
+  };
+
+
 
   // File viewing functions:
   const handleViewFile = (file) => {
@@ -360,17 +424,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await apiRequest(`/users/${userId}`, { method: 'DELETE' });
-        setUsers(users.filter(user => user.id !== userId));
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Failed to delete user');
-      }
-    }
-  };
 
   const closeModal = () => {
     setShowModal(false);
@@ -433,42 +486,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteBusiness = async (businessId) => {
-    if (window.confirm('Are you sure you want to delete this business?')) {
-      try {
-        await apiRequest(`/businesses/${businessId}`, { method: 'DELETE' });
-        setBusinesses(businesses.filter(business => business.id !== businessId));
-      } catch (error) {
-        console.error('Error deleting business:', error);
-        alert('Failed to delete business');
-      }
-    }
-  };
-
   const handleEditBusiness = (business) => {
     setEditingItem(business);
     setFormData({
       name: business.name,
       email: business.email,
       address: business.address,
-      phone: business.phone
+      phone: business.phone,
+      logo: business.logo
     });
     setModalType('editBusiness');
     setShowModal(true);
   };
-
   // Category Management Functions
-  const handleDeleteCategory = async (categoryId) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      try {
-        await apiRequest(`/categories/${categoryId}`, { method: 'DELETE' });
-        setCategories(categories.filter(category => category.id !== categoryId));
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        alert('Failed to delete category');
-      }
-    }
-  };
 
   const handleAddCategory = () => {
     setEditingItem(null);
@@ -517,16 +547,34 @@ export default function AdminDashboard() {
 };
 
 
-  const handleSubmitBusiness = async (e) => {
+ const handleSubmitBusiness = async (e) => {
     e.preventDefault();
+
     try {
+      const formDataToSend = new FormData();
+
+      // Append text fields
+      formDataToSend.append('name', formData.name || '');
+      formDataToSend.append('email', formData.email || '');
+      formDataToSend.append('address', formData.address || '');
+      formDataToSend.append('phone', formData.phone || '');
+
+      // Append logo file if user selected one
+      if (formData.logoFile) {
+        formDataToSend.append('logo', formData.logoFile);
+      }
+
       const updatedBusiness = await apiRequest(`/businesses/${editingItem.id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
-      setBusinesses(businesses.map(business => 
-        business.id === editingItem.id ? { ...business, ...updatedBusiness.business } : business
+
+      setBusinesses(businesses.map(business =>
+        business.id === editingItem.id
+          ? { ...business, ...updatedBusiness.business }
+          : business
       ));
+
       setShowModal(false);
       setFormData({});
     } catch (error) {
@@ -534,6 +582,7 @@ export default function AdminDashboard() {
       alert('Failed to update business');
     }
   };
+
 
   const [businessApplications, setBusinessApplications] = useState([]);
   const [applicationStats, setApplicationStats] = useState({
@@ -546,6 +595,12 @@ export default function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [fileViewHistory, setFileViewHistory] = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    type: '', // 'user', 'business', 'product', etc.
+    id: null
+  });
+
 
   // --- Analytics State ---
   const [metrics, setMetrics] = useState(null);
@@ -566,13 +621,14 @@ export default function AdminDashboard() {
 
   // --- Analytics Card Icons ---
   const metricIcons = {
-    totalOrders: '🛒',
-    totalRevenue: '💰',
-    activeRiders: '🚴',
-    avgDeliveryTime: '⏱️',
-    cancelledOrders: '❌',
-    failedOrders: '⚠️',
+    totalOrders: <ShoppingCart size={40} />,
+    totalRevenue: <DollarSign size={40} />,
+    activeRiders: <Users size={40} />, // or a custom cyclist icon if available
+    avgDeliveryTime: <Clock size={40} />,
+    cancelledOrders: <XCircle size={40} />,
+    failedOrders: <AlertTriangle size={40} />,
   };
+
 
   // --- Analytics Colors ---
   const metricColors = {
@@ -588,15 +644,16 @@ export default function AdminDashboard() {
   // (Removed duplicate renderAnalytics declaration)
 
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'users', label: 'User Management', icon: '👥' },
-    { id: 'businesses', label: 'Business Management', icon: '🏪' },
-    { id: 'business-applications', label: 'Business Applications', icon: '📝' },
-    { id: 'products', label: 'Product Management', icon: '🛒' },
-    { id: 'categories', label: 'Category Management', icon: '🏷️' },
-    { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
+    { id: 'users', label: 'User Management', icon: <Users size={18} /> },
+    { id: 'businesses', label: 'Business Management', icon: <Store size={18} /> },
+    { id: 'business-applications', label: 'Business Applications', icon: <FileText size={18} /> },
+    { id: 'products', label: 'Product Management', icon: <ShoppingCart size={18} /> },
+    { id: 'categories', label: 'Category Management', icon: <Tag size={18} /> },
+    { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={18} /> },
+    { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
+
   // Product Management Functions
 
   // Product Management Functions
@@ -627,23 +684,12 @@ export default function AdminDashboard() {
         stock: product.stock || product.quantity || '',
         category_name: product.category?.name || '',
         business_id: product.business?.id || product.business_id || '',
+        image: product.image || ''
       });
       setProductModalType('edit');
       setModalType('editProduct');
       setShowModal(true);
     }, 10);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await apiRequest(`/products/${productId}`, { method: 'DELETE' });
-        setProducts(products.filter(product => product.id !== productId));
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        alert('Failed to delete product');
-      }
-    }
   };
 
   const handleAddProduct = () => {
@@ -670,21 +716,36 @@ export default function AdminDashboard() {
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     try {
+      const formDataToSend = new FormData();
+      
+      // Append all text fields
+      Object.keys(productFormData).forEach(key => {
+        if (key !== 'imageFile' && productFormData[key]) {
+          formDataToSend.append(key, productFormData[key]);
+        }
+      });
+      
+      // Append image file if selected
+      if (productFormData.imageFile) {
+        formDataToSend.append('image', productFormData.imageFile);
+      }
+
       if (productModalType === 'edit' && editingItem) {
-        // Update existing product
         const updatedProduct = await apiRequest(`/products/${editingItem.id}`, {
           method: 'PUT',
-          body: JSON.stringify(productFormData)
+          body: formDataToSend,
+          headers: {} // Remove Content-Type to let browser set it for FormData
         });
         setProducts(products.map(prod => prod.id === editingItem.id ? { ...prod, ...updatedProduct.product } : prod));
       } else if (productModalType === 'add') {
-        // Create new product
         const newProduct = await apiRequest('/products', {
           method: 'POST',
-          body: JSON.stringify(productFormData)
+          body: formDataToSend,
+          headers: {} // Remove Content-Type to let browser set it for FormData
         });
         setProducts([...products, newProduct.product]);
       }
+      
       setShowModal(false);
       setProductFormData({});
       setEditingItem(null);
@@ -714,6 +775,7 @@ export default function AdminDashboard() {
           <thead>
             <tr>
               <th>ID</th>
+              <th>Image</th>  {/* Add this */}
               <th>Name</th>
               <th>Category</th>
               <th>Price</th>
@@ -728,6 +790,13 @@ export default function AdminDashboard() {
             ).map(product => (
               <tr key={product.id}>
                 <td>{product.id}</td>
+                <td>  {/* Add this cell */}
+                  <img 
+                    src={product.image ? `http://127.0.0.1:8000/storage/${product.image}` : 'https://via.placeholder.com/40x40?text=No+Image'} 
+                    alt={product.name} 
+                    style={{ width: 40, height: 40, borderRadius: '4px', objectFit: 'cover' }}
+                  />
+                </td>
                 <td>{product.name}</td>
                 <td>{product.category?.name || 'N/A'}</td>
                 <td>{product.price}</td>
@@ -737,7 +806,7 @@ export default function AdminDashboard() {
                   <div className="action-buttons">
                     <button className="btn-view" onClick={() => handleViewProduct(product)}>View</button>
                     <button className="btn-edit" onClick={() => handleEditProduct(product)}>Edit</button>
-                    <button className="btn-delete" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
+                    <button className="btn-delete" onClick={() => requestDelete('product', product.id)}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -757,7 +826,7 @@ export default function AdminDashboard() {
 
       <div className="metrics-grid">
         <div className="metric-card primary">
-          <div className="metric-icon">📊</div>
+          <div className="metric-icon"><BarChart3 size={22} /></div>
           <div className="metric-info">
             <h3>{dashboardData.totalOrders}</h3>
             <p>Total Orders Today</p>
@@ -765,7 +834,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="metric-card success">
-          <div className="metric-icon">👥</div>
+          <div className="metric-icon"><Users size={22} /></div>
           <div className="metric-info">
             <h3>{dashboardData.activeCustomers}</h3>
             <p>Active Customers</p>
@@ -773,7 +842,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="metric-card warning">
-          <div className="metric-icon">🏪</div>
+          <div className="metric-icon"><Store size={22} /></div>
           <div className="metric-info">
             <h3>{dashboardData.vendors}</h3>
             <p>Registered Vendors</p>
@@ -781,7 +850,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="metric-card info">
-          <div className="metric-icon">📦</div>
+          <div className="metric-icon"><Package size={22} /></div>
           <div className="metric-info">
             <h3>{dashboardData.productsInStock}</h3>
             <p>Products in Stock</p>
@@ -871,7 +940,7 @@ export default function AdminDashboard() {
                   <td>
                     <div className="action-buttons">
                       <button className="btn-view" onClick={() => handleViewUser(user)}>View</button>
-                      <button className="btn-delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                      <button className="btn-delete" onClick={() => requestDelete('user', user.id)}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -915,7 +984,12 @@ export default function AdminDashboard() {
             {businesses.map(business => (
               <tr key={business.id}>
                 <td>{business.id}</td>
-                <td>{business.name}</td>
+                <td><img 
+                      src={business.logo ? `http://127.0.0.1:8000/storage/${business.logo}` : '/placeholder-logo.png'} 
+                      alt={`${business.name} logo`} 
+                      style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', marginRight: 8 }}
+                    />
+                {business.name}</td>
                 <td>{business.email}</td>
                 <td>{business.phone}</td>
                 <td>{business.address}</td>
@@ -933,7 +1007,7 @@ export default function AdminDashboard() {
                   <div className="action-buttons">
                     <button className="btn-view" onClick={() => handleViewBusiness(business)}>View</button>
                     <button className="btn-edit" onClick={() => handleEditBusiness(business)}>Edit</button>
-                    <button className="btn-delete" onClick={() => handleDeleteBusiness(business.id)}>Delete</button>
+                    <button className="btn-delete" onClick={() =>requestDelete('business', business.id)}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -1045,7 +1119,7 @@ export default function AdminDashboard() {
                 <td>
                   <div className="action-buttons">
                     <button className="btn-edit" onClick={() => handleEditCategory(category)}>Edit</button>
-                    <button className="btn-delete" onClick={() => handleDeleteCategory(category.id)}>Delete</button>
+                    <button className="btn-delete" onClick={() => requestDelete('category', category.id)}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -1063,7 +1137,10 @@ export default function AdminDashboard() {
     if (!metrics) return null;
     return (
       <div className="analytics-section" style={{padding: '24px'}}>
-        <h2 style={{marginBottom: 24}}>📈 Business Analytics</h2>
+        <h2 style={{marginBottom: 24}}>
+          <TrendingUp size={20} style={{ marginRight: 8 }} />
+          Business Analytics
+        </h2>
         <div className="metrics-cards" style={{display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 32}}>
           {Object.entries({
             totalOrders: metrics.totalOrders,
@@ -1461,7 +1538,7 @@ export default function AdminDashboard() {
                   <strong>Image:</strong>
                   <br />
                   <img 
-                    src={viewedProduct.image} 
+                    src={`http://127.0.0.1:8000/storage/${viewedProduct.image}`} 
                     alt={viewedProduct.name}
                     style={{
                       maxWidth: '200px',
@@ -1476,16 +1553,7 @@ export default function AdminDashboard() {
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeModal}>Close</button>
-              <button 
-                className="btn-edit" 
-                onClick={() => {
-                  closeModal();
-                  setTimeout(() => handleEditProduct(viewedProduct), 50);
-                }}
-              >
-                Edit Product
-              </button>
+              <button className="btn-cancel" onClick={closeModal}>Close</button>    
             </div>
           </div>
         </div>
@@ -1521,7 +1589,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Price (₱)</label>
+                  <label>Price (₺)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1570,6 +1638,23 @@ export default function AdminDashboard() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Product Image</label>
+                  {productFormData.image && (
+                    <div style={{ marginBottom: '8px' }}>
+                      <img 
+                        src={`http://127.0.0.1:8000/storage/${productFormData.image}`}
+                        alt="Current product image"
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }}
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProductFormData({...productFormData, imageFile: e.target.files[0]})}
+                  />
                 </div>
               </div>
               <div className="modal-footer">
@@ -1629,6 +1714,17 @@ export default function AdminDashboard() {
               <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
+              <img 
+                src={viewedBusiness.logo ? `http://127.0.0.1:8000/storage/${viewedBusiness.logo}` : '/placeholder-logo.png'} 
+                alt={`${viewedBusiness.name} logo`} 
+                style={{ 
+                  width: 80, 
+                  height: 80, 
+                  borderRadius: '50%', 
+                  objectFit: 'cover', 
+                  marginBottom: 16 
+                }} 
+              />
               <div><strong>ID:</strong> {viewedBusiness.id}</div>
               <div><strong>Name:</strong> {viewedBusiness.name}</div>
               <div><strong>Email:</strong> {viewedBusiness.email}</div>
@@ -1715,6 +1811,24 @@ export default function AdminDashboard() {
               
               {modalType === 'editBusiness' && (
                 <>
+                 <div className="form-group" style={{ textAlign: 'center' }}>
+                    <img
+                      src={formData.logo ? `http://127.0.0.1:8000/storage/${formData.logo}` : '/placeholder-logo.png'}
+                      alt={`${formData.name || 'Business'} logo`}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        marginBottom: 8
+                      }}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFormData({ ...formData, logoFile: e.target.files[0] })}
+                    />
+                  </div>
                   <div className="form-group">
                     <label>Business Name</label>
                     <input
@@ -1801,14 +1915,16 @@ export default function AdminDashboard() {
 
         <div className="sidebar-footer">
           <div className="user-info">
-            <div className="user-avatar">👤</div>
+            <div className="user-avatar">
+              <User size={20} strokeWidth={1.5} />
+            </div>
             <div className="user-details">
               <div className="user-name">{user?.name}</div>
               <div className="user-role">Administrator</div>
             </div>
           </div>
           <button onClick={handleLogout} className="logout-btn">
-            <span>🚪</span> Logout
+            <LogOut size={18} /> Logout
           </button>
         </div>
       </aside>
@@ -1816,7 +1932,28 @@ export default function AdminDashboard() {
       <main className="main-content">
         {renderContent()}
       </main>
-
+      {deleteConfirm.show && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm({ show: false })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this {deleteConfirm.type}?</p>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn-cancel" 
+                onClick={() => setDeleteConfirm({ show: false })}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn-delete" 
+                onClick={() => handleDeleteConfirmed()}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {renderModal()}
     </div>
   );

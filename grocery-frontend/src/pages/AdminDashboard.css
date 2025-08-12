@@ -36,6 +36,7 @@ body {
 .sidebar-header {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   color: white;
+  padding: 1.5rem;
 }
 
 .logo {
@@ -52,7 +53,7 @@ body {
 }
 
 .logo-text {
-  color: black;
+  color: black; /* Changed from black to white for better contrast */
   font-weight: bold;
 }
 
@@ -69,23 +70,52 @@ body {
   padding: 0.875rem 1.5rem;
   background: none;
   border: none;
-  color: #374151;
+  color: black;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.95rem;
   font-weight: 500;
   text-align: left;
+  position: relative;
 }
 
+/* Updated hover effect to match screenshot */
 .nav-item:hover {
-  background: rgba(52, 211, 153, 0.1);
-  color: #059669;
+  background: rgba(255, 255, 255, 0.15); /* Light white overlay on green */
+  color: #ffffff; /* Pure white text on hover */
   transform: translateX(4px);
+  border-radius: 0 25px 25px 0; /* Rounded right edge */
 }
+
+/* Updated active state to match screenshot */
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(52, 211, 153, 0.2), rgba(5, 150, 105, 0.1));
-  color: #1f2937;
-  border-right: 3px solid #34d399;
+  background: rgba(255, 255, 255, 0.2); /* Slightly more opaque white overlay */
+  color: #ffffff; /* White text */
+  border-right: 4px solid #ffffff; /* White border indicator */
+  border-radius: 0 25px 25px 0; /* Rounded right edge */
+}
+
+/* Add a subtle glow effect on hover */
+.nav-item:hover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.5) 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #ffffff;
+  border-radius: 0 2px 2px 0;
 }
 
 .nav-icon {
@@ -107,20 +137,27 @@ body {
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: background 0.3s ease;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(45deg, #10b981, #06d6a0);
+  background: linear-gradient(45deg, #ffffff, rgba(255, 255, 255, 0.8));
+  color: #059669; /* Green text on white avatar */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
+  font-weight: bold;
 }
 
 .user-details {
@@ -130,31 +167,41 @@ body {
 .user-name {
   font-weight: 600;
   font-size: 0.9rem;
+  color: #ffffff;
 }
 
 .user-role {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .logout-btn {
+  margin: 1rem auto 2rem auto;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  color: #f87171;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  justify-content: center;
+  width: auto;
+  align-self: center;
 }
 
 .logout-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+.logout-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Main Content Styles */
@@ -522,15 +569,6 @@ body {
   background: #fecaca;
 }
 
-.btn-assign {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.btn-assign:hover {
-  background: #bfdbfe;
-}
-
 .btn-cancel {
   background: #fee2e2;
   color: #991b1b;
@@ -702,22 +740,6 @@ body {
   }
 }
 
-/* Mobile Menu Toggle (for future implementation) */
-.mobile-menu-toggle {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1100;
-  background: #1e293b;
-  color: white;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 8px;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: block;
@@ -777,34 +799,23 @@ body {
 }
 
 /* Focus states for accessibility */
-.nav-item:focus,
+
 .add-btn:focus,
-.logout-btn:focus,
 .action-buttons button:focus {
   outline: 2px solid #10b981;
   outline-offset: 2px;
 }
 
-/* Print styles */
-@media print {
-  .sidebar {
-    display: none;
-  }
-  
-  .main-content {
-    margin-left: 0;
-    padding: 1rem;
-  }
-  
-  .action-buttons {
-    display: none;
-  }
-  
-  .metric-card {
-    break-inside: avoid;
-  }
+.nav-item:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
 }
-/* Add these styles to your AdminDashboard.css */
+
+.logout-btn:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 
 /* File Grid Layout */
 .files-grid {
@@ -1064,7 +1075,7 @@ body {
 }
 
 .btn-submit {
-  background: linear-gradient(45deg, #3b82f6, #2563eb);
+  background: linear-gradient(45deg, #10b981, #059669);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1075,7 +1086,7 @@ body {
 }
 
 .btn-submit:hover {
-  background: linear-gradient(45deg, #2563eb, #1d4ed8);
+  background: linear-gradient(45deg, #059669, #047857);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
@@ -1089,7 +1100,7 @@ body {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #374151;
+  color: black;
 }
 
 .form-group input,
@@ -1171,5 +1182,69 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
   color: #475569;
+}
+
+.btn-cancel,
+.btn-close {
+  background: linear-gradient(45deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover,
+.btn-close:hover {
+  background: linear-gradient(45deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+/* Cancel Button */
+.modal-btn-cancel {
+  background-color: #e5e7eb; /* Tailwind gray-200 */
+  color: #374151; /* Tailwind gray-700 */
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.modal-btn-cancel:hover {
+  background-color: #d1d5db; /* gray-300 */
+  transform: translateY(-1px);
+}
+
+.modal-btn-cancel:active {
+  background-color: #9ca3af; /* gray-400 */
+  transform: translateY(0);
+}
+
+/* Delete Button */
+.modal-btn-delete {
+  background-color: #dc2626; /* red-600 */
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.modal-btn-delete:hover {
+  background-color: #b91c1c; /* red-700 */
+  transform: translateY(-1px);
+}
+
+.modal-btn-delete:active {
+  background-color: #991b1b; /* red-800 */
+  transform: translateY(0);
 }
 

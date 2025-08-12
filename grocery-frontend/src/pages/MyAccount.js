@@ -1,26 +1,38 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FaUser, FaBox, FaHeart, FaMapMarkerAlt, FaSignOutAlt,
-  FaEye, FaEyeSlash, FaCheck, FaTimes
+  FaUser, 
+  FaBox, 
+  FaHeart, 
+  FaMapMarkerAlt, 
+  FaSignOutAlt,
+  FaEye, 
+  FaEyeSlash, 
+  FaCheck, 
+  FaTimes
 } from 'react-icons/fa';
-//import './MyAccount.css';
-import Avatar from '../components/Avatar'; // adjust the path as needed
+
+// Import CSS Modules
+import styles from './MyAccount.module.css';
+
+// Import other components
+import Avatar from '../components/Avatar';
 import AddressSection from '../components/AddressSection';
 import Orders from '../components/Orders';
 
-
-
-// Move PasswordInput outside the main component to prevent re-renders
+/**
+ * Password Input Component
+ * Using CSS Modules: styles.passwordInputContainer, styles.passwordInput
+ */
 const PasswordInput = ({ value, onChange, placeholder, show, toggleShow }) => (
-  <div className="password-input-container" style={{ position: 'relative' }}>
+  <div className={styles.passwordInputContainer} style={{ position: 'relative' }}>
     <input
       type={show ? 'text' : 'password'}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
       autoComplete="off"
-      className="password-input"
+      className={styles.passwordInput}
     />
     <span
       onClick={toggleShow}
@@ -47,7 +59,8 @@ const PasswordInput = ({ value, onChange, placeholder, show, toggleShow }) => (
   </div>
 );
 
-export default function MyAccount() {
+
+const MyAccount = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [user, setUser] = useState(null);
@@ -66,12 +79,12 @@ export default function MyAccount() {
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
 
-
   const userIdRef = useRef(null);
 
   const token = localStorage.getItem('auth_token');
   const authUser = JSON.parse(localStorage.getItem('auth_user'));
 
+  // Load user profile data
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -104,13 +117,14 @@ export default function MyAccount() {
       });
   }, [navigate, token]);
 
+  // Event handlers
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     navigate('/');
   };
 
-  // Use useCallback to prevent unnecessary re-renders
+  // Password visibility toggles
   const toggleCurrentPassword = useCallback(() => {
     setShowCurrentPassword(prev => !prev);
   }, []);
@@ -128,6 +142,7 @@ export default function MyAccount() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    
     if (!userIdRef.current) {
       alert("User not loaded yet");
       setIsLoading(false);
@@ -164,7 +179,7 @@ export default function MyAccount() {
     }
   };
 
-  // Change password handler with separate loading state
+  // Change password handler
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
@@ -217,6 +232,7 @@ export default function MyAccount() {
     }
   };
   
+  // Handle profile picture upload
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -246,6 +262,7 @@ export default function MyAccount() {
     }
   };
 
+  // Remove profile picture
   const handleRemovePicture = async () => {
     if (!window.confirm('Are you sure you want to remove your picture?')) return;
 
@@ -268,7 +285,6 @@ export default function MyAccount() {
       alert('Error removing picture');
     }
   };
-
 
   // Delete account handler
   const handleDeleteAccount = async () => {
@@ -300,235 +316,236 @@ export default function MyAccount() {
     }
   };
 
-  if (loading) return <div className="myaccount-container">Loading account...</div>;
+  // Loading and error states
+  if (loading) return <div className={styles.myaccountContainer}>Loading account...</div>;
   if (!user) return null;
 
   return (
-    <div className="myaccount-container">
-      <aside className="myaccount-sidebar">
-        <div className="sidebar-header">
+    <div className={styles.myaccountContainer}>
+      {/* Sidebar */}
+      <aside className={styles.myaccountSidebar}>
+        <div className={styles.sidebarHeader}>
           <Avatar profilePicture={user.profile_picture} name={user.name} />
-          <div className="sidebar-user-info">
+          <div className={styles.sidebarUserInfo}>
             <h4>{user.name}</h4>
-            <span className="user-email">{user.email}</span>
+            <span className={styles.userEmail}>{user.email}</span>
           </div>
         </div>
 
-        <nav className="sidebar-nav">
-          <button onClick={() => setActiveTab('profile')} className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}>
+        <nav className={styles.sidebarNav}>
+          <button 
+            onClick={() => setActiveTab('profile')} 
+            className={`${styles.navItem} ${activeTab === 'profile' ? styles.active : ''}`}
+          >
             <FaUser /> Profile
           </button>
-          <button onClick={() => setActiveTab('orders')} className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}>
+          <button 
+            onClick={() => setActiveTab('orders')} 
+            className={`${styles.navItem} ${activeTab === 'orders' ? styles.active : ''}`}
+          >
             <FaBox /> Orders
           </button>
-          <button onClick={() => setActiveTab('addresses')} className={`nav-item ${activeTab === 'addresses' ? 'active' : ''}`}>
+          <button 
+            onClick={() => setActiveTab('addresses')} 
+            className={`${styles.navItem} ${activeTab === 'addresses' ? styles.active : ''}`}
+          >
             <FaMapMarkerAlt /> Addresses
           </button>
-          <button onClick={() => setActiveTab('wishlist')} className={`nav-item ${activeTab === 'wishlist' ? 'active' : ''}`}>
+          <button 
+            onClick={() => setActiveTab('wishlist')} 
+            className={`${styles.navItem} ${activeTab === 'wishlist' ? styles.active : ''}`}
+          >
             <FaHeart /> Wishlist
           </button>
         </nav>
 
-        <button onClick={handleLogout} className="logout-btn">
+        <button onClick={handleLogout} className={styles.logoutBtn}>
           <FaSignOutAlt /> Logout
         </button>
       </aside>
 
-      <main className="myaccount-content">
+      {/* Main Content */}
+      <main className={styles.myaccountContent}>
         {activeTab === 'profile' && (
-          <>
-        <div className="tab-content">
-          <div className="profile-header">
-            <div className="avatar-container">
-              <Avatar profilePicture={user.profile_picture} name={user.name} />
+          <div className={styles.tabContent}>
+            {/* Profile Header */}
+            <div className={styles.profileHeader}>
+              <div className={styles.avatarContainer}>
+                <Avatar profilePicture={user.profile_picture} name={user.name} />
 
-              <div className="avatar-action-wrapper">
-                {!showAvatarOptions ? (
-                  <button
-                    className="btn-primary"
-                    onClick={() => setShowAvatarOptions(true)}
-                    style={{ fontSize: '14px', padding: '6px 12px' }}
-                  >
-                    Edit Profile Picture
+                <div className={styles.avatarActionWrapper}>
+                  {!showAvatarOptions ? (
+                    <button
+                      className={styles.btnPrimary}
+                      onClick={() => setShowAvatarOptions(true)}
+                      style={{ fontSize: '14px', padding: '6px 12px' }}
+                    >
+                      Edit Profile Picture
+                    </button>
+                  ) : (
+                    <div className={styles.avatarOptions}>
+                      <label htmlFor="upload-avatar" className={styles.btnPrimary} style={{ cursor: 'pointer' }}>
+                        Upload New Picture
+                      </label>
+                      <input
+                        type="file"
+                        id="upload-avatar"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleUpload}
+                      />
+                      <button className={styles.btnDanger} onClick={handleRemovePicture}>
+                        Remove Picture
+                      </button>
+                      <button
+                        className={styles.cancelBtn}
+                        onClick={() => setShowAvatarOptions(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.profileInfo}>
+                <h2>My Profile</h2>
+                <p className={styles.profileSubtitle}>Manage your account information</p>
+              </div>
+            </div>
+
+            {/* Personal Information Form */}
+            <div className={styles.formSection}>
+              <h3>Personal Information</h3>
+              <form className={styles.modernForm} onSubmit={handleSaveChanges}>
+                <div className={styles.formGroup}>
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    disabled={!isEditing}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    value={user.email}
+                    disabled
+                    className={styles.emailInput}
+                  />
+                </div>
+
+                {!isEditing && (
+                  <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setIsEditing(true)}>
+                    Edit Profile
                   </button>
-                ) : (
-                  <div className="avatar-options">
-                    <label htmlFor="upload-avatar" className="btn-primary" style={{ cursor: 'pointer' }}>
-                      Upload New Picture
-                    </label>
-                    <input
-                      type="file"
-                      id="upload-avatar"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleUpload}
-                    />
-                    <button className="btn-danger" onClick={handleRemovePicture}>
-                      Remove Picture
+                )}
+
+                {isEditing && (
+                  <>
+                    <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={isLoading}>
+                      {isLoading ? 'Saving...' : 'Save Changes'}
                     </button>
                     <button
-                      className="cancel-btn"
-                      onClick={() => setShowAvatarOptions(false)}
+                      type="button"
+                      className={`${styles.btn} ${styles.btnDanger}`}
+                      onClick={() => {
+                        setEditName(user.name || '');
+                        setEditPhone(user.phone || '');
+                        setIsEditing(false);
+                      }}
+                      disabled={isLoading}
+                      style={{ marginLeft: '10px' }}
                     >
                       Cancel
                     </button>
-                  </div>
+                  </>
                 )}
-              </div>
+                {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+              </form>
             </div>
 
-            <div className="profile-info">
-              <h2>My Profile</h2>
-              <p className="profile-subtitle">Manage your account information</p>
-            </div>
-          </div>
+            {/* Change Password Section */}
+            <div className={styles.formSection}>
+              <h3>Change Password</h3>
+              <form className={styles.modernForm} onSubmit={handlePasswordChange}>
+                <div className={styles.formGroup}>
+                  <label>Current Password</label>
+                  <PasswordInput
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    show={showCurrentPassword}
+                    toggleShow={toggleCurrentPassword}
+                  />
+                </div>
 
-          <div className="form-section">
-            <h3>Personal Information</h3>
-            <form className="modern-form" onSubmit={handleSaveChanges}>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  disabled={!isEditing}
-                  required
-                />
-              </div>
+                <div className={styles.formGroup}>
+                  <label>New Password</label>
+                  <PasswordInput
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    show={showNewPassword}
+                    toggleShow={toggleNewPassword}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Phone Number</label>
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  disabled={!isEditing}
-                />
-              </div>
+                <div className={styles.formGroup}>
+                  <label>Confirm New Password</label>
+                  <PasswordInput
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    show={showConfirmPassword}
+                    toggleShow={toggleConfirmPassword}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  value={user.email}
-                  disabled
-                  className="email-input"
-                />
-                {/*<span className={`verification-badge ${user.email_verified ? 'verified' : 'unverified'}`}>
-                  {user.email_verified ? (
-                    <><FaCheck /> Verified</>
-                  ) : (
-                    <><FaTimes /> Not Verified</>
-                  )}
-                </span>
-                {!user.email_verified && (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => alert('Verification email sent')}
-                    style={{ marginTop: '10px' }}
-                  >
-                    Send Verification Email
-                  </button>
-                )}*/}
-              </div>
-
-
-              {!isEditing && (
-                <button type="button" className="btn btn-primary" onClick={() => setIsEditing(true)}>
-                  Edit Profile
+                <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={isPasswordLoading}>
+                  {isPasswordLoading ? 'Changing...' : 'Change Password'}
                 </button>
-              )}
+              </form>
+            </div>
 
-              {isEditing && (
-                <>
-                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                    {isLoading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => {
-                      setEditName(user.name || '');
-                      setEditPhone(user.phone || '');
-                      setIsEditing(false);
-                    }}
-                    disabled={isLoading}
-                    style={{ marginLeft: '10px' }}
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-              {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
-            </form>
-          </div>
-
-          <div className="form-section">
-            <h3>Change Password</h3>
-            <form className="modern-form" onSubmit={handlePasswordChange}>
-              <div className="form-group">
-                <label>Current Password</label>
-                <PasswordInput
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  show={showCurrentPassword}
-                  toggleShow={toggleCurrentPassword}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>New Password</label>
-                <PasswordInput
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  show={showNewPassword}
-                  toggleShow={toggleNewPassword}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Confirm New Password</label>
-                <PasswordInput
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  show={showConfirmPassword}
-                  toggleShow={toggleConfirmPassword}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" disabled={isPasswordLoading}>
-                {isPasswordLoading ? 'Changing...' : 'Change Password'}
+            {/* Danger Zone */}
+            <div className={`${styles.formSection} ${styles.dangerZone}`}>
+              <h3>Danger Zone</h3>
+              <p>Once you delete your account, there is no going back. Please be certain.</p>
+              <button 
+                type="button" 
+                onClick={handleDeleteAccount} 
+                className={`${styles.btn} ${styles.btnDanger}`} 
+                disabled={isLoading}
+              >
+                {isLoading ? 'Deleting...' : 'Delete Account'}
               </button>
-            </form>
+            </div>
           </div>
+        )}
 
-          <div className="form-section danger-zone">
-            <h3>Danger Zone</h3>
-            <p>Once you delete your account, there is no going back. Please be certain.</p>
-            <button 
-              type="button" 
-              onClick={handleDeleteAccount} 
-              className="btn btn-danger" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Deleting...' : 'Delete Account'}
-            </button>
-          </div>
-          
-
-        </div>
-        </> 
-      )}
-      {activeTab === 'addresses' && <AddressSection token={token} />}
-      {/* Placeholder for other tabs if needed */}
-      {activeTab === 'orders' && <Orders token={token} />}
-      {activeTab === 'wishlist' && <p>Wishlist section coming soon...</p>}
-    </main>
+        {/* Other Tab Contents */}
+        {activeTab === 'addresses' && <AddressSection token={token} />}
+        {activeTab === 'orders' && <Orders token={token} />}
+        {activeTab === 'wishlist' && <p>Wishlist section coming soon...</p>}
+      </main>
     </div>
   );
-}
+};
+
+// ES6 Module Export
+export default MyAccount;

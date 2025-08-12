@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../pages/MyAccount.css';
+import styles from '../pages/MyAccount.module.css';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -185,11 +185,11 @@ export default function AddressSection({ token }) {
   };
 
   const handleSave = async () => {
-    console.log('Save button clicked'); // Add this
-    console.log('Form data:', form); // Add this
+    console.log('Save button clicked');
+    console.log('Form data:', form);
     
     if (!form.street.trim()) {
-      console.log('No street address provided'); // Add this
+      console.log('No street address provided');
       alert('Street address is required');
       return;
     }
@@ -199,7 +199,7 @@ export default function AddressSection({ token }) {
       : 'http://localhost:8000/api/addresses';
     const method = editingId ? 'PUT' : 'POST';
 
-    console.log('Making request:', { url, method, form }); // Add this
+    console.log('Making request:', { url, method, form });
 
     try {
       const response = await fetch(url, {
@@ -211,12 +211,12 @@ export default function AddressSection({ token }) {
         body: JSON.stringify(form),
       });
 
-      console.log('Response status:', response.status); // Add this
+      console.log('Response status:', response.status);
       
       const contentType = response.headers.get('Content-Type');
       const data = contentType?.includes('application/json') ? await response.json() : await response.text();
       
-      console.log('Response data:', data); // Add this
+      console.log('Response data:', data);
 
       if (response.ok && data) {
         console.log('Save successful:', data);
@@ -226,17 +226,18 @@ export default function AddressSection({ token }) {
         
         handleCancel();     
       } else {
-        console.error('Save failed:', response.status, data); // Add this
+        console.error('Save failed:', response.status, data);
         alert(typeof data === 'string' ? data : data.message || 'Failed to save address');
       }
     } catch (err) {
-      console.error('Save error:', err); // Add this
+      console.error('Save error:', err);
       alert('Unexpected error while saving address: ' + err.message);
     }
   };
 
   const handleEdit = (address) => {
     setForm({
+      label: address.label || 'home',
       street: address.street || '',
       building_name: address.building_name || '',
       door_number: address.door_number || '',
@@ -271,6 +272,7 @@ export default function AddressSection({ token }) {
 
   const handleCancel = () => {
     setForm({
+      label: 'home',
       street: '',
       building_name: '',
       door_number: '',
@@ -292,93 +294,210 @@ export default function AddressSection({ token }) {
     return String(value);
   };
 
+  const getLabelIcon = (label) => {
+    switch(label?.toLowerCase()) {
+      case 'home': return '🏠';
+      case 'work': return '🏢';
+      case 'other': return '📍';
+      default: return '📍';
+    }
+  };
+
   return (
-    <div className="tab-content">
-      <div className="profile-header">
-        <div className="profile-info">
+    <div className={styles.tabContent}>
+      <div className={styles.profileHeader}>
+        <div className={styles.profileInfo}>
           <h2>My Addresses</h2>
-          <p className="profile-subtitle">Manage your delivery addresses</p>
+          <p className={styles.profileSubtitle}>Manage your delivery addresses</p>
         </div>
       </div>
 
-      <div className="form-section">
+      <div className={styles.formSection}>
         {!showForm && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            Add Address
+          <button 
+            className={`${styles.btn} ${styles.btnPrimary}`} 
+            onClick={() => setShowForm(true)}
+          >
+            Add New Address
           </button>
         )}
 
         {showForm && (
           <>
-            <div className="form-group">
-              <label>Street Address</label>
-              <input name="street" value={form.street} onChange={handleInputChange} />
-
-              <label>Address Label</label>
-              <select name="label" value={form.label} onChange={handleInputChange}>
+            <h3>{editingId ? 'Edit Address' : 'Add New Address'}</h3>
+            <div className={styles.modernForm}>
+              <div className={styles.formGroup}>
+                <label>Address Label</label>
+                <select 
+                  name="label" 
+                  value={form.label} 
+                  onChange={handleInputChange}
+                  className={styles.customSelect}
+                >
                   <option value="home">🏠 Home</option>
                   <option value="work">🏢 Work</option>
                   <option value="other">📍 Other</option>
-              </select>
+                </select>
+              </div>
 
-              <label>Building Name</label>
-              <input name="building_name" value={form.building_name} onChange={handleInputChange} />
-
-              <label>Door Number</label>
-              <input name="door_number" value={form.door_number} onChange={handleInputChange} />
-
-              <button className="btn btn-primary" onClick={handleSave}>
-                {editingId ? 'Update Address' : 'Save Address'}
-              </button>
-
-              <button className="btn btn-danger" onClick={handleCancel} style={{ marginLeft: 10 }}>
-                Cancel
-              </button>
-            </div>
-
-            <div className="map-container">
-              <MapContainer center={mapCoords} zoom={16} scrollWheelZoom={false} style={{ height: 300, marginTop: 10 }}>
-                <MapUpdater coords={mapCoords} />
-                <TileLayer
-                  attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              <div className={styles.formGroup}>
+                <label>Street Address *</label>
+                <input 
+                  name="street" 
+                  value={form.street} 
+                  onChange={handleInputChange}
+                  placeholder="Enter your street address"
+                  required
                 />
-                <ClickHandler onMapClick={handleMapClick} />
+              </div>
 
-                <Marker position={mapCoords} icon={markerIcon}>
-                  <Popup>Selected Location</Popup>
-                </Marker>
-              </MapContainer>
+              <div className={styles.formGroup}>
+                <label>Building Name</label>
+                <input 
+                  name="building_name" 
+                  value={form.building_name} 
+                  onChange={handleInputChange}
+                  placeholder="Building or complex name"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Door/Apartment Number</label>
+                <input 
+                  name="door_number" 
+                  value={form.door_number} 
+                  onChange={handleInputChange}
+                  placeholder="Door or apartment number"
+                />
+              </div>
+
+              {/* Map Container */}
+              <div className={styles.mapContainer}>
+                <label>Select Location on Map</label>
+                <div style={{ height: '300px', marginTop: '0.5rem', borderRadius: '12px', overflow: 'hidden' }}>
+                  <MapContainer 
+                    center={mapCoords} 
+                    zoom={16} 
+                    scrollWheelZoom={false} 
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <MapUpdater coords={mapCoords} />
+                    <TileLayer
+                      attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <ClickHandler onMapClick={handleMapClick} />
+                    <Marker position={mapCoords} icon={markerIcon}>
+                      <Popup>Selected Location</Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                  Click on the map to select your exact location
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button 
+                  className={`${styles.btn} ${styles.btnPrimary}`} 
+                  onClick={handleSave}
+                >
+                  {editingId ? 'Update Address' : 'Save Address'}
+                </button>
+                <button 
+                  className={`${styles.btn} ${styles.btnDanger}`} 
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </>
         )}
 
-        <h4 style={{ marginTop: '20px' }}>Saved Addresses</h4>
-        {loading ? (
-          <p>Loading...</p>
-        ) : addresses.length === 0 ? (
-          <p>No addresses yet.</p>
-        ) : (
-          <ul className="address-list">
-            {addresses.map((address, index) => (
-              <li key={address.id || `address-${index}`} className="address-item">
-                <div>
-                  <strong>{safeRender(address.label?.toUpperCase())} - {safeRender(address.street)}</strong>
-                  <br />
-                  {safeRender(address.building_name)}, Door: {safeRender(address.door_number)}
-                </div>
+        {/* Saved Addresses List */}
+        <div style={{ marginTop: '3rem' }}>
+          <h3>Saved Addresses</h3>
+          {loading ? (
+            <div className={styles.emptyState}>
+              <p>Loading addresses...</p>
+            </div>
+          ) : addresses.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📍</div>
+              <h4>No addresses saved yet</h4>
+              <p>Add your first address to get started with deliveries</p>
+            </div>
+          ) : (
+            <div className={styles.addressGrid}>
+              {addresses.map((address, index) => (
+                <div key={address.id || `address-${index}`} className={styles.addressCard}>
+                  <div className={styles.addressCardHeader}>
+                    <div className={styles.addressLabel}>
+                      <span className={styles.addressIcon}>
+                        {getLabelIcon(address.label)}
+                      </span>
+                      <span className={styles.addressLabelText}>
+                        {safeRender(address.label?.toUpperCase())}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.addressDetails}>
+                    <div className={styles.addressStreet}>
+                      {safeRender(address.street)}
+                    </div>
+                    {address.building_name && (
+                      <div className={styles.addressBuilding}>
+                        Building: {safeRender(address.building_name)}
+                      </div>
+                    )}
+                    {address.door_number && (
+                      <div className={styles.addressDoor}>
+                        Door: {safeRender(address.door_number)}
+                      </div>
+                    )}
+                    {address.city && (
+                      <div className={styles.addressCity}>
+                        {safeRender(address.city)}, {safeRender(address.country)}
+                      </div>
+                    )}
+                  </div>
 
-                <button className="btn btn-primary" onClick={() => handleEdit(address)}>
-                  Edit
-                </button>
-                <button className="btn btn-danger" onClick={() => handleDelete(address.id)} style={{ marginLeft: 8 }}>
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+                  <div className={styles.addressActions}>
+                    <button 
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                      onClick={() => handleEdit(address)}
+                      style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      className={`${styles.btn} ${styles.btnDanger}`}
+                      onClick={() => handleDelete(address.id)}
+                      style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {error && (
+            <div style={{ 
+              color: '#dc2626', 
+              background: '#fef2f2', 
+              padding: '1rem', 
+              borderRadius: '8px', 
+              marginTop: '1rem',
+              border: '1px solid #fecaca'
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

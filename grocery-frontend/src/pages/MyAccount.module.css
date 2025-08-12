@@ -1,4 +1,7 @@
-.myaccount-container {
+/* MyAccount.module.css - Compatible with MyAccount.js */
+
+/* Main Container */
+.myaccountContainer {
   display: flex;
   gap: 2rem;
   padding: 2rem;
@@ -9,7 +12,7 @@
 }
 
 /* Sidebar */
-.myaccount-sidebar {
+.myaccountSidebar {
   width: 300px;
   background: white;
   border-radius: 20px;
@@ -21,15 +24,14 @@
   overflow: hidden;
 }
 
-.sidebar-header {
+.sidebarHeader {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-
   padding: 2rem;
   text-align: center;
   color: rgb(0, 0, 0);
 }
 
-.sidebar-avatar {
+.sidebarAvatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -38,22 +40,22 @@
   margin-bottom: 1rem;
 }
 
-.sidebar-user-info h4 {
+.sidebarUserInfo h4 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
 }
 
-.user-email {
+.userEmail {
   font-size: 0.9rem;
   opacity: 0.9;
 }
 
-.sidebar-nav {
+.sidebarNav {
   padding: 1rem 0;
 }
 
-.nav-item {
+.navItem {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -69,27 +71,29 @@
   position: relative;
 }
 
-.nav-item:hover {
-  background: #a94444; /* lighter green hover */
-  color: #059669; 
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgb(63, 212, 100); 
+  transform: translateX(4px);
 }
 
-.nav-item.active {
-  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-  color: rgb(0, 0, 0);
+.navItem.active {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(6, 214, 160, 0.1));
+  color: rgb(28, 23, 23);
+  border-right: 3px solid #10b981;
 }
 
-.nav-item.active::before {
+.navItem.active::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
   width: 4px;
-  background: white;
+  background: rgb(78, 224, 71);
 }
 
-.logout-btn {
+.logoutBtn {
   margin: 1rem auto 2rem auto;
   padding: 0.75rem 1.5rem;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -106,20 +110,20 @@
   width: auto;
   align-self: center;
 }
-.logout-btn:hover {
+
+.logoutBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
-
 }
-.logout-btn:disabled {
+
+.logoutBtn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
 }
 
-
 /* Main Content */
-.myaccount-content {
+.myaccountContent {
   flex: 1;
   background: white;
   border-radius: 20px;
@@ -128,12 +132,12 @@
   overflow: hidden;
 }
 
-.tab-content {
+.tabContent {
   padding: 2rem;
 }
 
 /* Profile Header */
-.profile-header {
+.profileHeader {
   display: flex;
   align-items: center;
   gap: 2rem;
@@ -145,11 +149,11 @@
   margin: -2rem -2rem 3rem -2rem;
 }
 
-.avatar-container {
+.avatarContainer {
   position: relative;
 }
 
-.profile-avatar {
+.profileAvatar {
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -157,7 +161,7 @@
   object-fit: cover;
 }
 
-.avatar-overlay {
+.avatarOverlay {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -172,23 +176,51 @@
   border: 2px solid white;
 }
 
-.profile-info h2 {
+.avatarActionWrapper {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.avatarOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.avatarOptions .btnPrimary,
+.avatarOptions .btnDanger {
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+.cancelBtn {
+  font-size: 12px;
+  background: transparent;
+  color: #555;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.profileInfo h2 {
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
 }
 
-.profile-subtitle {
+.profileSubtitle {
   margin: 0.5rem 0 0 0;
   opacity: 0.9;
 }
 
 /* Form Styling */
-.form-section {
+.formSection {
   margin-bottom: 3rem;
 }
 
-.form-section h3 {
+.formSection h3 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #2d3748;
@@ -197,25 +229,25 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
-.modern-form {
+.modernForm {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.form-group {
+.formGroup {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-group label {
+.formGroup label {
   font-weight: 600;
   color: #4a5568;
   font-size: 0.9rem;
 }
 
-.form-group input {
+.formGroup input {
   padding: 1rem;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
@@ -224,30 +256,30 @@
   background: white;
 }
 
-.form-group input:focus {
+.formGroup input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input:disabled {
+.formGroup input:disabled {
   background: #f7fafc;
   color: #a0aec0;
 }
 
-/* Email Verification */
-.email-input-container {
+/* Email Input */
+.emailInputContainer {
   position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.email-input {
+.emailInput {
   flex: 1;
 }
 
-.verification-badge {
+.verificationBadge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -258,17 +290,17 @@
   white-space: nowrap;
 }
 
-.verification-badge.verified {
+.verificationBadge.verified {
   background: #c6f6d5;
   color: #22543d;
 }
 
-.verification-badge.unverified {
+.verificationBadge.unverified {
   background: #fed7d7;
   color: #742a2a;
 }
 
-.verify-btn {
+.verifyBtn {
   padding: 0.5rem 1rem;
   background: #667eea;
   color: white;
@@ -280,23 +312,35 @@
   align-self: flex-start;
 }
 
-.verify-btn:hover {
+.verifyBtn:hover {
   background: #5a67d8;
 }
 
-/* Password Inputs */
-.password-input-container {
+/* Password Input */
+.passwordInputContainer {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.password-input {
+.passwordInput {
   flex: 1;
+  padding: 1rem;
   padding-right: 3rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
 }
 
-.password-toggle {
+.passwordInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.passwordToggle {
   position: absolute;
   right: 1rem;
   background: none;
@@ -308,7 +352,7 @@
   transition: color 0.3s ease;
 }
 
-.password-toggle:hover {
+.passwordToggle:hover {
   color: #667eea;
 }
 
@@ -327,22 +371,22 @@
   width: fit-content;
 }
 
-.btn-primary {
+.btnPrimary {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   color: white;
 }
 
-.btn-primary:hover {
+.btnPrimary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(52, 211, 153, 0.3);
 }
 
-.btn-danger {
+.btnDanger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
 }
 
-.btn-danger:hover {
+.btnDanger:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
@@ -354,86 +398,57 @@
 }
 
 /* Danger Zone */
-.danger-zone {
+.dangerZone {
   background: #fef5e7;
   border: 2px solid #fed7aa;
   border-radius: 12px;
   padding: 2rem;
 }
 
-.danger-zone h3 {
+.dangerZone h3 {
   color: #dc2626;
   border-bottom-color: #fed7aa;
 }
 
-.danger-zone p {
+.dangerZone p {
   color: #92400e;
   margin-bottom: 1rem;
 }
 
 /* Empty State */
-.empty-state {
+.emptyState {
   text-align: center;
   padding: 4rem 2rem;
   color: #4a5568;
 }
 
-.empty-icon {
+.emptyIcon {
   font-size: 4rem;
   color: #cbd5e0;
   margin-bottom: 1rem;
 }
 
-.empty-state h2 {
+.emptyState h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
   color: #2d3748;
 }
 
-.empty-state p {
+.emptyState p {
   color: #718096;
   margin-bottom: 2rem;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .myaccount-container {
-    flex-direction: column;
-    padding: 1rem;
-  }
-
-  .myaccount-sidebar {
-    width: 100%;
-    position: static;
-  }
-
-  .sidebar-header {
-    padding: 1.5rem;
-  }
-
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .email-input-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .verification-badge {
-    justify-content: center;
-  }
-}
-.upload-avatar-form {
+/* Upload Avatar Form */
+.uploadAvatarForm {
   margin-top: 10px;
 }
 
-.upload-avatar-form input[type="file"] {
+.uploadAvatarForm input[type="file"] {
   margin-bottom: 8px;
 }
-.btn-upload {
+
+.btnUpload {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   color: white;
   padding: 6px 12px;
@@ -444,45 +459,19 @@
   transition: all 0.3s ease;
 }
 
-.btn-upload:hover {
+.btnUpload:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-}
-.avatar-action-wrapper {
-  text-align: center;
-  margin-top: 10px;
+  box-shadow: 0 8px 20px rgba(52, 211, 153, 0.3);
 }
 
-.avatar-options {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.avatar-options .btn-primary,
-.avatar-options .btn-danger {
-  font-size: 14px;
-  padding: 6px 12px;
-}
-
-.avatar-options .cancel-btn {
-  font-size: 12px;
-  background: transparent;
-  color: #555;
-  border: none;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.address-list {
+/* Address List */
+.addressList {
   list-style: none;
   padding: 0;
   margin-top: 10px;
 }
 
-.address-item {
+.addressItem {
   padding: 8px 12px;
   margin-bottom: 8px;
   background-color: #f9f9f9;
@@ -492,7 +481,8 @@
   justify-content: space-between;
   align-items: center;
 }
-.add-btn {
+
+.addBtn {
   background-color: #22c55e;
   color: white;
   padding: 6px 12px;
@@ -501,28 +491,19 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  border: none;
+  cursor: pointer;
 }
 
-.logout-btn {
-  margin-top: auto;
-  padding: 10px;
-  background: #dc2626;
-  color: white;
+/* Business Card Buttons */
+.businessCardButtons {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-}
-.business-card-buttons {
-  display: flex;
-  gap: 0.5rem; /* spacing between buttons */
+  gap: 0.5rem;
   margin-top: 1rem;
 }
 
-.business-card-buttons button {
-  flex: 1; /* equal width buttons */
+.businessCardButtons button {
+  flex: 1;
   padding: 8px 12px;
   font-weight: 600;
   border-radius: 6px;
@@ -535,32 +516,32 @@
   transition: background-color 0.3s ease;
 }
 
-.business-card-buttons button.edit-btn {
+.editBtn {
   background-color: #22c55e;
   color: white;
 }
 
-.business-card-buttons button.edit-btn:hover {
+.editBtn:hover {
   background-color: #16a34a;
 }
 
-.business-card-buttons button.delete-btn {
+.deleteBtn {
   background-color: #dc2626;
   color: white;
 }
 
-.business-card-buttons button.delete-btn:hover {
+.deleteBtn:hover {
   background-color: #b91c1c;
 }
+
 /* Products Grid */
-.products-grid {
+.productsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1 rem;
+  gap: 1rem;
 }
 
-/* Product Card */
-.product-card {
+.productCard {
   background: white;
   border: 1px solid #ddd;
   border-radius: 12px;
@@ -572,106 +553,52 @@
   cursor: pointer;
 }
 
-.product-card:hover {
+.productCard:hover {
   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
   transform: translateY(-4px);
 }
 
-/* Product Image */
-.product-image {
+.productImage {
   width: 100%;
-  height: 140px;
+  height: 180px;
   object-fit: cover;
-  border-bottom: 1px solid #eee;
+  border-radius: 8px;
 }
 
-/* Product Info */
-.product-info {
+.productInfo {
   padding: 1rem;
   flex-grow: 1;
 }
 
-.product-name {
+.productName {
   margin: 0 0 0.25rem 0;
   font-weight: 600;
   font-size: 1.1rem;
   color: #111827;
 }
 
-.product-price {
+.productPrice {
   margin: 0 0 0.5rem 0;
   font-weight: 700;
   color: #22c55e;
   font-size: 1rem;
 }
 
-.product-category {
+.productCategory {
   margin: 0;
   font-size: 0.85rem;
   color: #6b7280;
 }
 
-/* Button container inside product card */
-.business-card-buttons {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem 1rem 1rem;
-  justify-content: flex-end;
-  border-top: 1px solid #eee;
-}
-
-/* Edit & Delete Buttons */
-.edit-btn,
-.delete-btn {
-  flex: none;
-  padding: 6px 14px;
-  font-size: 0.875rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  border: none;
-}
-
-.edit-btn {
-  background-color: #34d399;
-  color: white;
-}
-
-.edit-btn:hover {
-  background-color: #059669;
-}
-
-.delete-btn {
-  background-color: #ef4444;
-  color: white;
-}
-
-.delete-btn:hover {
-  background-color: #b91c1c;
-}
-
-/* Empty State */
-.empty-state {
-  padding: 3rem 0;
-  text-align: center;
-  font-style: italic;
-  color: #6b7280;
-}
-.product-card img {
-  width: 100%;
-  height: 180px; /* Adjust as needed */
-  object-fit: cover;
-  border-radius: 8px;
-}
-.dashboard-summary-section {
+/* Dashboard Summary */
+.dashboardSummarySection {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.business-summary-card {
+.businessSummaryCard {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -680,11 +607,12 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-.business-summary-card h3 {
+.businessSummaryCard h3 {
   margin-bottom: 0.5rem;
   color: #111827;
 }
 
+/* Modal Styles */
 .modal {
   position: fixed;
   top: 20%;
@@ -696,13 +624,15 @@
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+
 .modal input {
   display: block;
   margin-bottom: 10px;
   width: 100%;
   padding: 0.5rem;
 }
-.modal-overlay {
+
+.modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -715,7 +645,7 @@
   z-index: 1000;
 }
 
-.modal-box {
+.modalBox {
   background: white;
   padding: 2rem;
   border-radius: 10px;
@@ -724,14 +654,14 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-.modal-title {
+.modalTitle {
   margin-bottom: 1rem;
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
 }
 
-.modal-form input {
+.modalForm input {
   display: block;
   width: 100%;
   padding: 0.75rem;
@@ -741,13 +671,13 @@
   font-size: 1rem;
 }
 
-.modal-actions {
+.modalActions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
 }
 
-.modal-save {
+.modalSave {
   background-color: #22c55e;
   color: white;
   border: none;
@@ -756,14 +686,16 @@
   cursor: pointer;
 }
 
-.modal-cancel {
+.modalCancel {
   background-color: #e5e7eb;
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   cursor: pointer;
 }
-.custom-select {
+
+/* Custom Select */
+.customSelect {
   width: 100%;
   padding: 10px 12px;
   font-size: 1rem;
@@ -778,8 +710,194 @@
   transition: border-color 0.3s ease;
 }
 
-.spaced-input {
-  margin-bottom: 1rem; /* Adjust spacing as needed */
+.spacedInput {
+  margin-bottom: 1rem;
 }
 
+/* Address Section Styles */
+.mapContainer {
+  margin-bottom: 1.5rem;
+}
 
+.mapContainer label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.addressGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.addressCard {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.addressCard:hover {
+  border-color: #34d399;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.addressCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.addressLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addressIcon {
+  font-size: 1.2rem;
+}
+
+.addressLabelText {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.addressDetails {
+  margin-bottom: 1.5rem;
+}
+
+.addressStreet {
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.addressBuilding,
+.addressDoor,
+.addressCity {
+  color: #4a5568;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.addressActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.addressActions .btn {
+  flex: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Address List (fallback for simple list view) */
+.addressList {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.addressItem {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.addressItem > div:first-child {
+  flex: 1;
+}
+
+.addressItem strong {
+  color: #1f2937;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.addressItem .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .myaccountContainer {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .myaccountSidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .sidebarHeader {
+    padding: 1.5rem;
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .emailInputContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .verificationBadge {
+    justify-content: center;
+  }
+
+  .businessCardButtons {
+    flex-direction: column;
+  }
+
+  .productsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardSummarySection {
+    flex-direction: column;
+  }
+
+  .addressGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .addressActions {
+    flex-direction: column;
+  }
+
+  .addressItem {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .addressItem .btn {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}

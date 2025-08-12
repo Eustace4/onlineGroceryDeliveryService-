@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;  
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class BusinessController extends Controller
 {
@@ -132,6 +133,10 @@ public function destroy($id)
     // ✅ Admin can delete any business
     if (!in_array($user->role, ['vendor', 'admin'])) {
         return response()->json(['message' => 'Unauthorized.'], 403);
+    }
+
+    if ($business->logo && \Storage::disk('public')->exists($business->logo)) {
+        \Storage::disk('public')->delete($business->logo);
     }
 
     $business->delete();
@@ -266,6 +271,5 @@ public function getCustomerStats($businessId)
         ] : null
     ]);
 }
-
 
 }
