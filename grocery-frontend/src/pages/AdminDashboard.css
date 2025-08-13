@@ -1248,3 +1248,12 @@ body {
   transform: translateY(0);
 }
 
+.ticket-system-section {
+  padding: 0;
+  height: 100%;
+}
+
+.ticket-system-section .ticket-system {
+  height: 100vh;
+  overflow-y: auto;
+}

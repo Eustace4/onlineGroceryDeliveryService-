@@ -16,6 +16,8 @@ import {
   Clock,
   XCircle,
   AlertTriangle,
+  Ticket,
+  TicketCheck,
   Eye,
   Edit,
   Trash2,
@@ -28,6 +30,8 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import './AdminDashboard.css';
+import AdminSettings from '../components/AdminSettings';
+import TicketSystem from '../components/TicketSystem';
 
 // API configuration
 const API_BASE_URL = 'http://127.0.0.1:8000/api'; // Adjust this to your Laravel API URL
@@ -697,6 +701,7 @@ export default function AdminDashboard() {
     { id: 'categories', label: 'Category Management', icon: <Tag size={18} /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={18} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
+    { id: 'Ticket System', label: 'Ticket System', icon: <Ticket size={18} /> },
   ];
 
   // Product Management Functions
@@ -1273,7 +1278,7 @@ export default function AdminDashboard() {
         <div className="metrics-cards" style={{display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 32}}>
           {Object.entries({
             totalOrders: metrics.totalOrders,
-            totalRevenue: `₱${metrics.totalRevenue}`,
+            totalRevenue: `₺${metrics.totalRevenue}`,
             activeRiders: metrics.activeRiders,
             avgDeliveryTime: `${metrics.avgDeliveryTime} min`,
             cancelledOrders: metrics.cancelledOrders,
@@ -1320,7 +1325,7 @@ export default function AdminDashboard() {
               <div style={{display: 'flex', alignItems: 'center'}}>
                 <span style={{width: 160}}>{b.name}</span>
                 <div style={{background: '#2ecc71', height: 18, width: `${Math.max(10, b.revenue / 10)}px`, borderRadius: 8, margin: '0 12px'}}></div>
-                <span style={{fontWeight: 600}}>₱{b.revenue}</span>
+                <span style={{fontWeight: 600}}>₺{b.revenue}</span>
               </div>
             </div>
           )) : <div style={{color: '#888'}}>No data</div>}
@@ -1388,7 +1393,17 @@ export default function AdminDashboard() {
       case 'analytics':
         return renderAnalytics();
       case 'settings':
-        return <div className="coming-soon">System Settings - Coming Soon</div>;
+        return (
+          <div className="settings-section">
+            <AdminSettings />
+          </div>
+        );
+      case 'Ticket System':
+        return (
+          <div className="ticket-system-section">
+            <TicketSystem />
+          </div>
+        );
       default:
         return renderDashboard();
     }

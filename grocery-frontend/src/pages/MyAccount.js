@@ -19,6 +19,7 @@ import styles from './MyAccount.module.css';
 import Avatar from '../components/Avatar';
 import AddressSection from '../components/AddressSection';
 import Orders from '../components/Orders';
+import WishlistSection from '../components/WishlistSection';
 
 /**
  * Password Input Component
@@ -541,7 +542,7 @@ const MyAccount = () => {
         {/* Other Tab Contents */}
         {activeTab === 'addresses' && <AddressSection token={token} />}
         {activeTab === 'orders' && <Orders token={token} />}
-        {activeTab === 'wishlist' && <p>Wishlist section coming soon...</p>}
+        {activeTab === 'wishlist' && <WishlistSection token={token} />}
       </main>
     </div>
   );

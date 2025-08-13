@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useRef} from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaHeart } from 'react-icons/fa';
 import './Home.css';
+
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 
 
 export default function Home() {
@@ -11,24 +14,15 @@ export default function Home() {
   const [businesses, setBusinesses] = useState([]);
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
   const featuredBusinessesRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ products: [], businesses: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const { cart, cartCount, cartTotal, addToCart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { wishlist, toggleWishlist, isInWishlist } = useWishlist();
+  const [isCartOpen, setIsCartOpen] = useState(false);
   
-
-  const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
-
-
-  const updateCartCount = () => {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalItems);
-  };
-
-
 
   useEffect(() => {
   const token = localStorage.getItem('auth_token');
@@ -58,18 +52,6 @@ export default function Home() {
     });
 }, [location]); 
 
-  useEffect(() => {
-    // Load cart from localStorage on component mount
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      const parsedCart = JSON.parse(savedCart);
-      setCart(parsedCart);
-      const totalItems = parsedCart.reduce((sum, item) => sum + item.quantity, 0);
-      setCartCount(totalItems);
-    }
-  }, []); // Empty dependency array means this runs once on mount
-
-
   const handleLogout = () => {
     setShowLogoutLoading(true);
     setTimeout(() => {
@@ -79,6 +61,56 @@ export default function Home() {
       setShowLogoutLoading(false);
       navigate('/');
     }, 1500);
+  };
+
+  // Add search function:
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults({ products: [], businesses: [] });
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const [productsRes, businessesRes] = await Promise.all([
+        fetch(`http://localhost:8000/api/products?search=${encodeURIComponent(query)}`),
+        fetch(`http://localhost:8000/api/public/businesses?search=${encodeURIComponent(query)}`)
+      ]);
+
+      const productsData = await productsRes.json();
+      const businessesData = await businessesRes.json();
+
+      setSearchResults({
+        products: Array.isArray(productsData) ? productsData : productsData.data || [],
+        businesses: Array.isArray(businessesData) ? businessesData : businessesData.data || []
+      });
+    } catch (err) {
+      console.error('Search failed:', err);
+      setSearchResults({ products: [], businesses: [] });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddToCart = (product) => {
+    const businessId = product.business?.id || product.business_id;
+    addToCart(product, 1, businessId);
+  };
+
+  const handleToggleWishlist = async (product) => {
+    await toggleWishlist(product); // The wishlist hook already handles the login check and notification
+  };
+
+  // Update search input handler:
+  const handleSearchInputChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Debounce search
+    clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(() => {
+      handleSearch(query);
+    }, 300);
   };
 
   useEffect(() => {
@@ -142,58 +174,6 @@ export default function Home() {
       });
   }, []);
 
-  const handleAddToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        return [...prevCart, { 
-          ...product, 
-          quantity: 1,
-          price: parseFloat(product.price) // Ensure price is a number
-        }];
-      }
-    });
-  };
- useEffect(() => {
-    if (cart.length > 0) { // Only save if cart has items
-      localStorage.setItem('cart', JSON.stringify(cart));
-    }
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalItems);
-  }, [cart]);
-
-
-  const [isCartOpen, setIsCartOpen] = useState(false);
-
-  const increaseQty = (id) => {
-    const updated = cart.map((item) =>
-      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-    );
-    setCart(updated);
-  };
-
-  const decreaseQty = (id) => {
-    const updated = cart
-      .map((item) =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-      .filter((item) => item.quantity > 0);
-    setCart(updated);
-  };
-
-  const removeItem = (id) => {
-    const updated = cart.filter((item) => item.id !== id);
-    setCart(updated);
-  };
 
   const handleStartShopping = () => {
     featuredBusinessesRef.current?.scrollIntoView({ 
@@ -223,6 +203,9 @@ export default function Home() {
               <FaSearch />
             </span>
             <a href="/wishlist">Wishlist</a>
+            <div className="cart-toggle" onClick={() => setIsCartOpen(!isCartOpen)}>
+              Cart ({cartCount})
+            </div>
             {isLoggedIn ? (
               <>
                 <Link to="/my-account">My Account</Link>
@@ -239,22 +222,94 @@ export default function Home() {
 
         {showSearch && (
           <div className="container search-bar">
-            <input type="text" placeholder="Search for Products or Businesses..." autoFocus />
+            <input 
+              type="text" 
+              placeholder="Search for Products or Businesses..." 
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              autoFocus 
+            />
+            {isSearching && <span style={{marginLeft: '10px', color: '#666'}}>Searching...</span>}
+            
+            {(searchResults.products.length > 0 || searchResults.businesses.length > 0) && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                zIndex: 1000,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+              }}>
+                {searchResults.businesses.length > 0 && (
+                  <div style={{padding: '10px', borderBottom: '1px solid #eee'}}>
+                    <h4 style={{margin: '0 0 8px 0', color: '#333'}}>Businesses</h4>
+                    {searchResults.businesses.slice(0, 3).map(business => (
+                      <div key={business.id} style={{padding: '8px 0', borderBottom: '1px solid #f5f5f5'}}>
+                        <Link 
+                          to="/business-store" 
+                          state={{ business }}
+                          style={{color: '#4a8f29', textDecoration: 'none'}}
+                          onClick={() => setShowSearch(false)}
+                        >
+                          {business.name}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {searchResults.products.length > 0 && (
+                  <div style={{padding: '10px'}}>
+                    <h4 style={{margin: '0 0 8px 0', color: '#333'}}>Products</h4>
+                    {searchResults.products.slice(0, 5).map(product => (
+                      <div key={product.id} style={{
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        padding: '8px 0',
+                        borderBottom: '1px solid #f5f5f5'
+                      }}>
+                        <img 
+                          src={`http://localhost:8000/storage/${product.image}`}
+                          alt={product.name}
+                          style={{width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px'}}
+                        />
+                        <div style={{flex: 1}}>
+                          <div style={{fontWeight: '500'}}>{product.name}</div>
+                          <div style={{fontSize: '12px', color: '#666'}}>
+                            {product.business?.name} - ${product.price}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            handleAddToCart(product);
+                            setShowSearch(false);
+                          }}
+                          style={{
+                            backgroundColor: '#4a8f29',
+                            color: 'white',
+                            border: 'none',
+                            padding: '4px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Add to Cart
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </header>
-      {/*{cart.length > 0 && (
-        <div className="cart-panel container">
-          <h3>Your Cart</h3>
-          <ul>
-            {cart.map((item) => (
-              <li key={item.id} style={{ marginBottom: '10px' }}>
-                <strong>{item.name}</strong> — ${item.price} × {item.quantity}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}*/}
+      
       <section className="hero">
         <div className="hero-content">
           <h1>Discover Groceries from Multiple Businesses</h1>
@@ -294,17 +349,52 @@ export default function Home() {
         <h2 className="section-title">Featured Products</h2>
         <div className="products-grid">
           {products.map((product) => (
-            <div className="product-card" key={product.id}>
+            <div className="product-card" key={product.id} style={{ position: 'relative' }}>
               <div className="product-image">
                 <img
                   src={`http://localhost:8000/storage/${product.image}`}
                   alt={product.name}
                   style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px' }}
                 />
+                 {/* Wishlist Heart Button */}
+                  <button
+                    onClick={() => handleToggleWishlist(product)}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '35px',
+                      height: '35px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <FaHeart 
+                      style={{ 
+                        color: isInWishlist(product.id) ? '#ff4757' : '#ddd',
+                        fontSize: '16px'
+                      }} 
+                    />
+                  </button>
               </div>
               <h3 className="product-title">{product.name}</h3>
               <p className="product-description">{product.description}</p>
-              <div className="product-price">${product.price}</div>             
+              <p className="product-business">From: {product.business?.name || 'Unknown Business'}</p>
+              <div className="product-price">${product.price}</div>   
+              <button 
+                className="add-to-cart"
+                onClick={() => handleAddToCart(product)}
+              >
+                Add to Cart
+              </button>          
             </div>
           ))}
         </div>
@@ -314,27 +404,176 @@ export default function Home() {
         
         <h2 className="section-title">Best Sellers</h2>
         <div className="products-grid">
-          <div className="product-card">
+          <div className="product-card" style={{ position: 'relative' }}>
             <div className="product-image">
               <img src={require('../images/products/fresh-bananas.jpeg')} alt="Fresh Bananas" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+
+               {/* Wishlist Heart Button */}
+                <button
+                  onClick={() => handleToggleWishlist({
+                    id: 'bs-1',
+                    name: 'Fresh Bananas',
+                    price: '1.99',
+                    description: 'Sweet and ripe bananas, perfect for snacking',
+                    business: { name: 'Fresh Fruit Market', id: 1 },
+                    image: 'products/fresh-bananas.jpeg'
+                  })}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '35px',
+                    height: '35px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  title={isInWishlist('bs-1') ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  <FaHeart 
+                    style={{ 
+                      color: isInWishlist('bs-1') ? '#ff4757' : '#ddd',
+                      fontSize: '16px'
+                    }} 
+                  />
+                </button>
             </div>
             <h3 className="product-title">Fresh Bananas</h3>
+            <p className="product-description">Sweet and ripe bananas, perfect for snacking</p>
+            <p className="product-business">From: Fresh Fruit Market</p>
             <div className="product-price">$1.99</div>
-
+            <button 
+              className="add-to-cart"
+              onClick={() => handleAddToCart({
+                id: 'bs-1',
+                name: 'Fresh Bananas',
+                price: '1.99',
+                description: 'Sweet and ripe bananas, perfect for snacking',
+                business: { name: 'Fresh Fruit Market', id: 1 },
+                image: 'products/fresh-bananas.jpeg'
+              })}
+            >
+              Add to Cart
+            </button>
           </div>
-          <div className="product-card">
+
+          <div className="product-card" style={{ position: 'relative' }}>
             <div className="product-image">
               <img src={require('../images/products/free-range-eggs.jpg')} alt="Free-range Eggs" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+               {/* Wishlist Heart Button */}
+                <button
+                  onClick={() => handleToggleWishlist({
+                    id: 'bs-1',
+                    name: 'Fresh Bananas',
+                    price: '1.99',
+                    description: 'Sweet and ripe bananas, perfect for snacking',
+                    business: { name: 'Fresh Fruit Market', id: 1 },
+                    image: 'products/fresh-bananas.jpeg'
+                  })}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '35px',
+                    height: '35px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  title={isInWishlist('bs-1') ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  <FaHeart 
+                    style={{ 
+                      color: isInWishlist('bs-1') ? '#ff4757' : '#ddd',
+                      fontSize: '16px'
+                    }} 
+                  />
+                </button>
             </div>
             <h3 className="product-title">Free-range Eggs</h3>
+            <p className="product-description">Farm-fresh free-range eggs from happy hens</p>
+            <p className="product-business">From: Countryside Farm</p>
             <div className="product-price">$2.49</div>
+            <button 
+              className="add-to-cart"
+              onClick={() => handleAddToCart({
+                id: 'bs-2',
+                name: 'Free-range Eggs',
+                price: '2.49',
+                description: 'Farm-fresh free-range eggs from happy hens',
+                business: { name: 'Countryside Farm', id: 2 },
+                image: 'products/free-range-eggs.jpg'
+              })}
+            >
+              Add to Cart
+            </button>
           </div>
-          <div className="product-card">
+
+          <div className="product-card" style={{ position: 'relative' }}>
             <div className="product-image">
               <img src={require('../images/products/organic-honey.jpeg')} alt="Organic Honey" style={{width: '100%', height: '180px', objectFit: 'cover', borderRadius: '5px'}} />
+               {/* Wishlist Heart Button */}
+                <button
+                  onClick={() => handleToggleWishlist({
+                    id: 'bs-1',
+                    name: 'Fresh Bananas',
+                    price: '1.99',
+                    description: 'Sweet and ripe bananas, perfect for snacking',
+                    business: { name: 'Fresh Fruit Market', id: 1 },
+                    image: 'products/fresh-bananas.jpeg'
+                  })}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '35px',
+                    height: '35px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  title={isInWishlist('bs-1') ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  <FaHeart 
+                    style={{ 
+                      color: isInWishlist('bs-1') ? '#ff4757' : '#ddd',
+                      fontSize: '16px'
+                    }} 
+                  />
+                </button>
             </div>
             <h3 className="product-title">Organic Honey</h3>
+            <p className="product-description">Pure organic honey from local beekeepers</p>
+            <p className="product-business">From: Bee Happy Organics</p>
             <div className="product-price">$6.00</div>
+            <button 
+              className="add-to-cart"
+              onClick={() => handleAddToCart({
+                id: 'bs-3',
+                name: 'Organic Honey',
+                price: '6.00',
+                description: 'Pure organic honey from local beekeepers',
+                business: { name: 'Bee Happy Organics', id: 3 },
+                image: 'products/organic-honey.jpeg'
+              })}
+            >
+              Add to Cart
+            </button>
           </div>
         </div>
 
@@ -373,18 +612,18 @@ export default function Home() {
                     <p><strong>{item.name}</strong></p>
                     <p>${parseFloat(item.price).toFixed(2)}</p>
                     <div className="quantity-controls">
-                      <button onClick={() => decreaseQty(item.id)}>-</button>
+                      <button onClick={() => updateQuantity(item.id, -1)}>-</button>
                       <span>{item.quantity}</span>
-                      <button onClick={() => increaseQty(item.id)}>+</button>
+                      <button onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
-                    <button className="remove" onClick={() => removeItem(item.id)}>Remove</button>
+                    <button className="remove" onClick={() => removeFromCart(item.id)}>Remove</button>
                   </div>
                 </div>
               ))}
 
               {/* ➕ Subtotal and Checkout */}
               <div className="cart-summary">
-                <p><strong>Subtotal:</strong> ₺{cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0).toFixed(2)}</p>
+                <p><strong>Subtotal:</strong> ₺{cartTotal.toFixed(2)}</p>
                  <button
                   onClick={() => {
                     if (!isLoggedIn) {

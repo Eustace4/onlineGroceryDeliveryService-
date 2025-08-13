@@ -17,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\BusinessApplicationController;
 use App\Http\Controllers\AdminBusinessApplicationController;
+use App\Http\Controllers\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -130,6 +131,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rider routes
     Route::get('/rider/orders', [RiderController::class, 'assignedOrders']);
     Route::put('/rider/orders/{orderId}/update-status', [RiderController::class, 'updateDeliveryStatus']);
+
+    // Wishlist routes
+    Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::post('/wishlist', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{product_id}', [WishlistController::class, 'destroy']);
     
     // Vendor routes
     Route::get('/vendor/businesses', [VendorController::class, 'businesses']);

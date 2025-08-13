@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './BusinessStore.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
+import { FaHeart } from 'react-icons/fa'; // if not already imported
+
 
 const BusinessStore = () => {
   const [categoryMap, setCategoryMap] = useState({});
@@ -9,13 +13,13 @@ const BusinessStore = () => {
   const navigate = useNavigate();
   const { business } = location.state || {};
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState(['All']);
-  
+  const { cart, cartCount, cartTotal, addToCart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   
   useEffect(() => {
@@ -40,13 +44,6 @@ const BusinessStore = () => {
           });
   }, []);
 
-  
-  
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    setCart(savedCart);
-  }, []);
 
   // Fetch products for the business
   useEffect(() => {
@@ -78,102 +75,6 @@ const BusinessStore = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isCartOpen]);
   
-
-  const handleAddToCart = (product, quantity) => {
-    if (!product || quantity < 1) return;
-
-    if (cart.length > 0 && cart[0].businessId !== business.id) {
-      alert('You can only add products from one business at a time. Please clear your cart first.');
-      return;
-    }
-
-    setCart(prevCart => {
-      const existingIndex = prevCart.findIndex(item => item.id === product.id);
-      let updatedCart = [...prevCart];
-
-      if (existingIndex >= 0) {
-        updatedCart[existingIndex].quantity += quantity;
-      } else {
-        updatedCart.push({ ...product, quantity, businessId: business.id });
-      }
-
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-      return updatedCart;
-    });
-
-    // Show success message with better UX
-    showNotification('Product added to cart! 🛒');
-  };
-
-  const updateQuantity = (productId, delta) => {
-    setCart(prevCart => {
-      const updatedCart = prevCart.map(item => {
-        if (item.id === productId) {
-          const newQuantity = item.quantity + delta;
-          return { ...item, quantity: newQuantity > 0 ? newQuantity : 1 };
-        }
-        return item;
-      });
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-      return updatedCart;
-    });
-  };
-
-  const removeFromCart = (productId) => {
-    setCart(prevCart => {
-      const updatedCart = prevCart.filter(item => item.id !== productId);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-      return updatedCart;
-    });
-    showNotification('Item removed from cart');
-  };
-
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem('cart');
-    showNotification('Cart cleared');
-  };
-
-
-  const showNotification = (message) => {
-    // Simple notification system (you could enhance this with a proper toast library)
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      top: 100px;
-      right: 20px;
-      background: #4CAF50;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      z-index: 10000;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      font-weight: 600;
-      animation: slideIn 0.3s ease;
-    `;
-    
-    // Add animation keyframes
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.animation = 'slideIn 0.3s ease reverse';
-      setTimeout(() => {
-        document.body.removeChild(notification);
-        document.head.removeChild(style);
-      }, 300);
-    }, 2000);
-  };
-
   // Filter products based on category and search term
   // Filter products based on category and search term
   const filteredProducts = products.filter(product => {
@@ -183,13 +84,18 @@ const BusinessStore = () => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const handleAddToCart = (product, quantity = 1) => {
+    addToCart(product, quantity, business.id);
+  };
+
+  // ✅ ADD NEW wishlist function:
+  const handleToggleWishlist = async (product) => {
+    await toggleWishlist(product); // The wishlist hook already handles the login check and notification
+  };
   
   // Get unique categories for filter dropdown
   //const categories = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
-
-  // Calculate cart total
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (!business) {
     return (
@@ -223,7 +129,7 @@ const BusinessStore = () => {
     <div className="business-store">
       {/* Toggle Cart Button */}
       <button className="toggle-cart-btn" onClick={() => setIsCartOpen(!isCartOpen)}>
-        {isCartOpen ? 'Close Cart' : `Cart (${cartItemCount})`}
+        {isCartOpen ? 'Close Cart' : `Cart (${cartCount})`}
       </button>
 
       <div className="store-container" style={{ marginRight: isCartOpen ? '400px' : '0' }}>
@@ -329,6 +235,35 @@ const BusinessStore = () => {
                       e.target.src = 'https://via.placeholder.com/280x200?text=Product+Image';
                     }}
                   />
+
+                  {/* Wishlist Heart Button */}
+                  <button
+                    onClick={() => handleToggleWishlist(product)}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '35px',
+                      height: '35px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <FaHeart 
+                      style={{ 
+                        color: isInWishlist(product.id) ? '#ff4757' : '#ddd',
+                        fontSize: '16px'
+                      }} 
+                    />
+                  </button>
                   <h4>{product.name}</h4>
                   {product.description && (
                     <p className="product-description">{product.description}</p>
@@ -347,93 +282,95 @@ const BusinessStore = () => {
         )}
       </div>
 
-      {/* Cart Sidebar */}
-      <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3>🛒 Your Cart</h3>
-          <button 
-            onClick={() => setIsCartOpen(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#666'
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {cart.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#666' }}>
-            <p>Your cart is empty</p>
-            <p style={{ fontSize: '14px' }}>Add some products to get started!</p>
+        {/* Cart Sidebar */}
+              
+        <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
+          <div className="cart-header">
+            <h3>Your Cart</h3>
+            <button className="close-cart" onClick={() => setIsCartOpen(false)}>×</button>
           </div>
-        ) : (
-          <>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {cart.map(item => (
-                <div key={item.id} className="cart-item">
-                  <span>{item.name}</span>
-                  <div style={{ fontSize: '14px', color: '#666', margin: '5px 0' }}>
-                    ₺{parseFloat(item.price).toLocaleString()} each
-                  </div>
-                  <div className="qty-controls">
-                    <div>
-                      <button onClick={() => updateQuantity(item.id, -1)}>-</button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)}>+</button>
+          
+          <div className="cart-items">
+            {cart.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '50px 20px', color: '#666' }}>
+                <p>Your cart is empty</p>
+                <p style={{ fontSize: '14px' }}>Add some products to get started!</p>
+              </div>
+            ) : (
+              <>
+                {cart.map((item) => (
+                  <div key={item.id} className="cart-item">
+                    <img 
+                      src={`http://127.0.0.1:8000/storage/${item.image}`} 
+                      alt={item.name}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/50x50?text=Product';
+                      }}
+                    />
+                    <div className="item-details">
+                      <p><strong>{item.name}</strong></p>
+                      <p>₺{parseFloat(item.price).toFixed(2)}</p>
+                      <div className="quantity-controls">
+                        <button onClick={() => updateQuantity(item.id, -1)}>-</button>
+                        <span>{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)}>+</button>
+                      </div>
+                      <button className="remove" onClick={() => removeFromCart(item.id)}>Remove</button>
                     </div>
-                    <button className="remove-btn" onClick={() => removeFromCart(item.id)}>
-                      Remove
+                  </div>
+                ))}
+
+                {/* Cart Summary */}
+                <div className="cart-summary">
+                  <p><strong>Items ({cartCount}):</strong> ₺{cartTotal.toFixed(2)}</p>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                    <button 
+                      onClick={clearCart}
+                      style={{
+                        flex: '0 0 auto',
+                        padding: '10px 15px',
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/checkout', { 
+                          state: { 
+                            cart, 
+                            business, 
+                            cartTotal 
+                          }
+                        });
+                      }}
+                      disabled={cart.length === 0}
+                      className="checkout-button"
+                      style={{
+                        flex: '1',
+                        padding: '12px',
+                        background: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      Go to Checkout
                     </button>
                   </div>
-                  <div style={{ fontWeight: '600', color: '#4CAF50', textAlign: 'right' }}>
-                    ₺{(item.price * item.quantity).toLocaleString()}
-                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="checkout-section">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span>Items ({cartItemCount}):</span>
-                <span>₺{cartTotal.toLocaleString()}</span>
-              </div>
-              <h4 style={{ borderTop: '1px solid #eee', paddingTop: '10px', marginTop: '10px' }}>
-                Total: ₺{cartTotal.toLocaleString()}
-              </h4>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                <button 
-                  onClick={clearCart}
-                  style={{
-                    flex: '0 0 auto',
-                    padding: '10px 15px',
-                    background: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Clear
-                </button>
-                <button className="checkout-btn" onClick={() => navigate('/checkout', { 
-                  state: { 
-                    cart, 
-                    business, 
-                    cartTotal 
-                  }
-                })}>
-                  Checkout
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+              </>
+            )}
+          </div>
+        </div>
     </div>
   );
 };

@@ -565,3 +565,207 @@ footer {
   margin-bottom: 10px;
 }
 
+.cart-toggle {
+  cursor: pointer;
+  font-weight: bold;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #4a8f29;
+  margin: 0 20px;
+  position: relative;
+}
+
+.product-business {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.wishlist-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  font-size: 18px;
+  cursor: pointer;
+  color: #ccc;
+  transition: all 0.3s ease;
+}
+
+.wishlist-btn:hover,
+.wishlist-btn.active {
+  color: #ff6b6b;
+  background: white;
+  transform: scale(1.1);
+}
+
+.product-image {
+  position: relative;
+}
+
+.add-to-cart {
+  background-color: #4a8f29;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.add-to-cart:hover {
+  background-color: #3a7320;
+}
+
+.add-to-cart:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Add these CSS updates to your Home.css file */
+
+/* Fix user actions layout to be on same line */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-actions a,
+.user-actions .cart-toggle {
+  white-space: nowrap;
+}
+
+/* Search dropdown styles */
+.search-bar {
+  position: relative;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+}
+
+.search-bar input:focus {
+  border-color: #4a8f29;
+  box-shadow: 0 0 0 2px rgba(74, 143, 41, 0.1);
+}
+
+/* Search results dropdown */
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-results h4 {
+  margin: 0;
+  padding: 12px 16px 8px;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+}
+
+.search-result-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+  background-color: #f8f9fa;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+/* Product search result specific styles */
+.product-search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-search-result img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.product-search-info {
+  flex: 1;
+}
+
+.product-search-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.product-search-meta {
+  font-size: 12px;
+  color: #666;
+}
+
+.search-add-to-cart {
+  background-color: #4a8f29;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-add-to-cart:hover {
+  background-color: #3a7320;
+}
+
+/* Business search result styles */
+.business-search-result a {
+  color: #4a8f29;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.business-search-result a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .search-bar input {
+    font-size: 14px;
+  }
+}
