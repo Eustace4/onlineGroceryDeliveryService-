@@ -9,7 +9,11 @@ import {
   FaEye, 
   FaEyeSlash, 
   FaCheck, 
-  FaTimes
+  FaTimes,
+  FaCreditCard,
+  FaPlus,
+  FaTrash
+
 } from 'react-icons/fa';
 
 // Import CSS Modules
@@ -20,6 +24,7 @@ import Avatar from '../components/Avatar';
 import AddressSection from '../components/AddressSection';
 import Orders from '../components/Orders';
 import WishlistSection from '../components/WishlistSection';
+import NotificationModal from '../components/NotificationModal';
 
 /**
  * Password Input Component
@@ -79,6 +84,26 @@ const MyAccount = () => {
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [newCard, setNewCard] = useState({
+    card_number: '',
+    card_holder_name: '',
+    expiry_month: '',
+    expiry_year: '',
+    cvv: '',
+    card_type: 'visa'
+  });
+
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    showConfirm: false,
+    onConfirm: null
+  });
+
 
   const userIdRef = useRef(null);
 
@@ -179,6 +204,185 @@ const MyAccount = () => {
       setIsLoading(false);
     }
   };
+
+  // Fetch user payment methods
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/payment-methods', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentMethods(Array.isArray(data) ? data : data.data || []);
+      } else if (response.status === 401) {
+        showNotification('error', 'Session Expired', 'Please log in again');
+        navigate('/login');
+      } else {
+        const errorData = await response.json();
+        showNotification('error', 'Error', errorData.message || 'Failed to fetch payment methods');
+      }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      showNotification('error', 'Network Error', 'Unable to connect to server');
+    }
+  };
+
+  const showNotification = (type, title, message, showConfirm = false, onConfirm = null) => {
+    setNotification({
+      isOpen: true,
+      type,
+      title,
+      message,
+      showConfirm,
+      onConfirm
+    });
+  };
+
+  const formatCardNumber = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    // Add spaces every 4 digits
+    return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+  };
+
+  // Add new payment method
+  const handleAddCard = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    // Frontend validation
+    if (!newCard.card_number.replace(/\s/g, '')) {
+      showNotification('error', 'Invalid Input', 'Please enter a valid card number');
+      setLoading(false);
+      return;
+    }
+
+    if (!newCard.card_holder_name.trim()) {
+      showNotification('error', 'Invalid Input', 'Please enter the cardholder name');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/api/payment-methods', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          ...newCard,
+          card_number: newCard.card_number.replace(/\s/g, '') // Remove spaces
+        }),
+      });
+
+      if (response.ok) {
+        const savedCard = await response.json();
+        setPaymentMethods(prev => [...prev, savedCard]);
+        setShowAddCard(false);
+        setNewCard({
+          card_number: '',
+          card_holder_name: '',
+          expiry_month: '',
+          expiry_year: '',
+          cvv: '',
+          card_type: 'visa'
+        });
+        showNotification('success', 'Success', 'Card added successfully!');
+      } else {
+        const errorData = await response.json();
+        
+        if (errorData.errors) {
+          // Handle validation errors
+          const errorMessages = Object.values(errorData.errors).flat().join('\n');
+          showNotification('error', 'Validation Error', errorMessages);
+        } else {
+          showNotification('error', 'Error', errorData.message || 'Failed to add card');
+        }
+      }
+    } catch (error) {
+      console.error('Error adding card:', error);
+      showNotification('error', 'Network Error', 'Unable to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleDeleteCard = async (cardId) => {
+    showNotification(
+      'warning',
+      'Delete Card',
+      'Are you sure you want to delete this card? This action cannot be undone.',
+      true,
+      async () => {
+        try {
+          const response = await fetch(`http://localhost:8000/api/payment-methods/${cardId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            setPaymentMethods(prev => prev.filter(card => card.id !== cardId));
+            showNotification('success', 'Success', 'Card deleted successfully');
+          } else {
+            const errorData = await response.json();
+            showNotification('error', 'Error', errorData.message || 'Failed to delete card');
+          }
+        } catch (error) {
+          console.error('Error deleting card:', error);
+          showNotification('error', 'Network Error', 'Unable to connect to server');
+        }
+      }
+    );
+  };
+
+  // Updated setDefaultCard function (add this new function)
+  const handleSetDefaultCard = async (cardId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/payment-methods/${cardId}/default`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Update the payment methods list
+        setPaymentMethods(prev => prev.map(card => ({
+          ...card,
+          is_default: card.id === cardId
+        })));
+        showNotification('success', 'Success', 'Default payment method updated');
+      } else {
+        const errorData = await response.json();
+        showNotification('error', 'Error', errorData.message || 'Failed to update default payment method');
+      }
+    } catch (error) {
+      console.error('Error setting default card:', error);
+      showNotification('error', 'Network Error', 'Unable to connect to server');
+    }
+  };
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    // Your existing fetch calls...
+    fetchPaymentMethods(); // Add this line
+  }, [navigate, token]);
+
 
   // Change password handler
   const handlePasswordChange = async (e) => {
@@ -357,6 +561,12 @@ const MyAccount = () => {
             className={`${styles.navItem} ${activeTab === 'wishlist' ? styles.active : ''}`}
           >
             <FaHeart /> Wishlist
+          </button>
+          <button 
+            onClick={() => setActiveTab('payments')} 
+            className={`${styles.navItem} ${activeTab === 'payments' ? styles.active : ''}`}
+          >
+            <FaCreditCard /> Payment Methods
           </button>
         </nav>
 
@@ -543,6 +753,225 @@ const MyAccount = () => {
         {activeTab === 'addresses' && <AddressSection token={token} />}
         {activeTab === 'orders' && <Orders token={token} />}
         {activeTab === 'wishlist' && <WishlistSection token={token} />}
+
+        {activeTab === 'payments' && (
+          <div className={styles.tabContent}>
+            <div className={styles.profileHeader}>
+              <div className={styles.profileInfo}>
+                <h2>Payment Methods</h2>
+                <p className={styles.profileSubtitle}>Manage your saved cards</p>
+              </div>
+            </div>
+
+            <div className={styles.formSection}>
+              <div className={styles.sectionHeader}>
+                <h3>Saved Cards</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCard(!showAddCard)}
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                >
+                  <FaPlus /> Add New Card
+                </button>
+              </div>
+
+              {paymentMethods.length > 0 ? (
+                <div className={styles.addressGrid}>
+                  {paymentMethods.map(card => (
+                    <div key={card.id} className={`${styles.addressCard} ${card.is_default ? styles.defaultCard : ''}`}>
+                      <div className={styles.addressCardHeader}>
+                        <div className={styles.addressLabel}>
+                          <FaCreditCard className={styles.addressIcon} />
+                          <span className={styles.addressLabelText}>
+                            {card.card_type?.toUpperCase() || 'CARD'}
+                            {card.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.addressDetails}>
+                        <div className={styles.addressStreet}>
+                          {card.card_number || `**** **** **** ${card.card_number?.slice(-4) || '****'}`}
+                        </div>
+                        <div className={styles.addressBuilding}>
+                          {card.card_holder_name}
+                        </div>
+                        <div className={styles.addressCity}>
+                          Expires: {card.expiry_month}/{card.expiry_year}
+                        </div>
+                      </div>
+                      <div className={styles.addressActions}>
+                        {!card.is_default && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDefaultCard(card.id)}
+                            className={`${styles.btn} ${styles.btnSecondary}`}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                          >
+                            Set Default
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCard(card.id)}
+                          className={`${styles.btn} ${styles.btnDanger}`}
+                        >
+                          <FaTrash /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <FaCreditCard className={styles.emptyIcon} />
+                  <h3>No Payment Methods</h3>
+                  <p>Add a card to make checkout faster</p>
+                </div>
+              )}
+
+              {showAddCard && (
+                <div className={styles.formSection}>
+                  <h3>Add New Card</h3>
+                  <form className={styles.modernForm} onSubmit={handleAddCard}>
+                    <div className={styles.formGroup}>
+                      <label>Card Type</label>
+                      <select
+                        value={newCard.card_type}
+                        onChange={(e) => setNewCard(prev => ({ ...prev, card_type: e.target.value }))}
+                        className={styles.customSelect}
+                      >
+                        <option value="visa">Visa</option>
+                        <option value="mastercard">Mastercard</option>
+                        <option value="amex">American Express</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Card Number</label>
+                      <input
+                        type="text"
+                        value={newCard.card_number}
+                        onChange={(e) => {
+                          const formatted = formatCardNumber(e.target.value);
+                          if (formatted.replace(/\s/g, '').length <= 19) {
+                            setNewCard(prev => ({ ...prev, card_number: formatted }));
+                          }
+                        }}
+                        placeholder="1234 5678 9012 3456"
+                        required
+                      />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Cardholder Name</label>
+                      <input
+                        type="text"
+                        value={newCard.card_holder_name}
+                        onChange={(e) => setNewCard(prev => ({ ...prev, card_holder_name: e.target.value }))}
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div className={styles.formGroup} style={{ flex: 1 }}>
+                        <label>Expiry Month</label>
+                        <select
+                          value={newCard.expiry_month}
+                          onChange={(e) => setNewCard(prev => ({ ...prev, expiry_month: e.target.value }))}
+                          className={styles.customSelect}
+                          required
+                        >
+                          <option value="">Month</option>
+                          {[...Array(12)].map((_, i) => (
+                            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                              {String(i + 1).padStart(2, '0')} - {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className={styles.formGroup} style={{ flex: 1 }}>
+                        <label>Expiry Year</label>
+                        <select
+                          value={newCard.expiry_year}
+                          onChange={(e) => setNewCard(prev => ({ ...prev, expiry_year: e.target.value }))}
+                          className={styles.customSelect}
+                          required
+                        >
+                          <option value="">Year</option>
+                          {[...Array(10)].map((_, i) => {
+                            const year = new Date().getFullYear() + i;
+                            return (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div className={styles.formGroup} style={{ flex: 1 }}>
+                        <label>CVV</label>
+                        <input
+                          type="password"
+                          value={newCard.cvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 4) {
+                              setNewCard(prev => ({ ...prev, cvv: value }));
+                            }
+                          }}
+                          placeholder="123"
+                          maxLength="4"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        type="submit"
+                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        disabled={loading}
+                      >
+                        {loading ? 'Adding...' : 'Add Card'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddCard(false);
+                          setNewCard({
+                            card_number: '',
+                            card_holder_name: '',
+                            expiry_month: '',
+                            expiry_year: '',
+                            cvv: '',
+                            card_type: 'visa'
+                          });
+                        }}
+                        className={`${styles.btn} ${styles.btnDanger}`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notification Modal */}
+        <NotificationModal
+          isOpen={notification.isOpen}
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          showConfirm={notification.showConfirm}
+          onConfirm={notification.onConfirm}
+          onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        />
       </main>
     </div>
   );

@@ -60,7 +60,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'user_id');
     }
-
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
+    public function defaultPaymentMethod()
+{
+    return $this->hasOne(PaymentMethod::class)->where('is_default', true);
+}
 }
 
 

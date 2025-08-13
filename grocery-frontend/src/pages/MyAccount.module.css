@@ -697,17 +697,24 @@
 /* Custom Select */
 .customSelect {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #fff;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.2s ease;
   appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg fill='%23666' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
   background-repeat: no-repeat;
-  background-position: right 10px center;
   background-size: 16px;
-  transition: border-color 0.3s ease;
+  padding-right: 40px;
+}
+
+.customSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .spacedInput {
@@ -780,9 +787,10 @@
 
 .addressStreet {
   font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
+  color: #1f2937;
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
 }
 
 .addressBuilding,
@@ -900,4 +908,194 @@
     margin-left: 0;
     margin-top: 0.5rem;
   }
+}
+
+/* Payment Methods Mobile Optimization */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  flex: 1;
+}
+
+/* Mobile-optimized payment card layout */
+@media (max-width: 768px) {
+  .sectionHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sectionHeader .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .addressGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .addressCard {
+    padding: 1rem;
+  }
+
+  .addressActions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .addressActions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Card form mobile optimization */
+  .modernForm > div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .modernForm > div[style*="display: flex"] > div {
+    flex: none !important;
+  }
+
+  /* Payment navigation button */
+  .navItem {
+    padding: 1.2rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .navItem svg {
+    font-size: 1.2rem;
+  }
+
+  /* Form inputs on mobile */
+  .formGroup input,
+  .customSelect {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 1.2rem 1rem;
+  }
+
+  /* Empty state mobile */
+  .emptyState {
+    padding: 3rem 1rem;
+  }
+
+  .emptyIcon {
+    font-size: 3rem;
+  }
+}
+
+/* Very small screens (phones in portrait) */
+@media (max-width: 480px) {
+  .profileHeader {
+    margin: -2rem -1rem 2rem -1rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .tabContent {
+    padding: 1rem;
+  }
+
+  .myaccountContainer {
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+
+  .myaccountSidebar {
+    width: 100%;
+  }
+
+  .navItem {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .addressCard {
+    border-radius: 8px;
+  }
+
+  .addressCardHeader {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .addressDetails {
+    margin-bottom: 1rem;
+  }
+
+  .formSection {
+    margin-bottom: 2rem;
+  }
+
+  /* Card number display mobile */
+  .addressStreet {
+    font-size: 1.1rem;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .navItem {
+    min-height: 48px;
+  }
+
+  .addressCard {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .addressCard:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+}
+/* Payment card specific styles - ADD THESE */
+.defaultCard {
+  border: 2px solid #10b981 !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.defaultBadge {
+  background: #10b981;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+/* Update existing .btnSecondary if it doesn't exist */
+.btnSecondary {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btnSecondary:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
 }

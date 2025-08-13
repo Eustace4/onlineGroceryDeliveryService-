@@ -18,6 +18,7 @@ use App\Http\Controllers\VendorController;
 use App\Http\Controllers\BusinessApplicationController;
 use App\Http\Controllers\AdminBusinessApplicationController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\PaymentMethodsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,6 +125,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/addresses/{id}', [AddressController::class, 'userAddresses']);
     Route::post('/addresses', [AddressController::class, 'store']);
 
+    // Payment Methods
+    Route::get('/payment-methods', [PaymentMethodsController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodsController::class, 'store']);
+    Route::delete('/payment-methods/{id}', [PaymentMethodsController::class, 'destroy']);
+    Route::patch('/payment-methods/{id}/default', [PaymentMethodsController::class, 'setDefault']);
     // Payments
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::get('/payments/{id}', [PaymentController::class, 'show']);

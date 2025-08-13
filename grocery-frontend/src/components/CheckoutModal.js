@@ -15,6 +15,8 @@ const CheckoutModal = () => {
     const savedCart = localStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [selectedPaymentId, setSelectedPaymentId] = useState('');
   
   const cartTotal = cartItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
 
@@ -45,6 +47,7 @@ const CheckoutModal = () => {
     if (token) {
       fetchUserProfile();
       fetchUserAddresses();
+      fetchSavedPaymentMethods();
     }
   }, [token]);
 
@@ -144,6 +147,25 @@ const CheckoutModal = () => {
     }
   };
 
+  // Add this function to fetch saved payment methods
+  const fetchSavedPaymentMethods = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/payment-methods', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSavedPaymentMethods(Array.isArray(data) ? data : data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    }
+  };
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     
@@ -172,9 +194,13 @@ const CheckoutModal = () => {
         items: cartItems.map(item => ({
           product_id: item.id,
           quantity: item.quantity
-        }))
+        })),
+        payment_method: orderData.payment_method,
+        payment_method_id: orderData.payment_method_id,
+        special_instructions: orderData.special_instructions,
+        phone: orderData.phone
       };
-
+      
       const response = await fetch('http://localhost:8000/api/orders', {
         method: 'POST',
         headers: {
@@ -205,6 +231,8 @@ const CheckoutModal = () => {
       setLoading(false);
     }
   };
+
+  
 
 
 // Replace your return statement with this improved version:
@@ -473,35 +501,138 @@ return (
                   name="payment_method"
                   value="cash"
                   checked={orderData.payment_method === 'cash'}
-                  onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value }))}
+                  onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value, payment_method_id: null }))}
                 />
                 <div className={styles['payment-icon']}>💵</div>
                 <span className={styles['payment-label']}>Cash on Delivery</span>
               </label>
-              <label className={`${styles['payment-option']} ${orderData.payment_method === 'card' ? styles.selected : ''}`}>
+              
+              {savedPaymentMethods.length > 0 && (
+                <label className={`${styles['payment-option']} ${orderData.payment_method === 'saved_card' ? styles.selected : ''}`}>
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="saved_card"
+                    checked={orderData.payment_method === 'saved_card'}
+                    onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value }))}
+                  />
+                  <div className={styles['payment-icon']}>💳</div>
+                  <span className={styles['payment-label']}>Saved Card</span>
+                </label>
+              )}
+              
+              <label className={`${styles['payment-option']} ${orderData.payment_method === 'new_card' ? styles.selected : ''}`}>
                 <input
                   type="radio"
                   name="payment_method"
-                  value="card"
-                  checked={orderData.payment_method === 'card'}
-                  onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value }))}
+                  value="new_card"
+                  checked={orderData.payment_method === 'new_card'}
+                  onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value, payment_method_id: null }))}
                 />
-                <div className={styles['payment-icon']}>💳</div>
-                <span className={styles['payment-label']}>Credit/Debit Card</span>
-              </label>
-              <label className={`${styles['payment-option']} ${orderData.payment_method === 'online' ? styles.selected : ''}`}>
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value="online"
-                  checked={orderData.payment_method === 'online'}
-                  onChange={(e) => setOrderData(prev => ({ ...prev, payment_method: e.target.value }))}
-                />
-                <div className={styles['payment-icon']}>🌐</div>
-                <span className={styles['payment-label']}>Online Payment</span>
+                <div className={styles['payment-icon']}>🆕</div>
+                <span className={styles['payment-label']}>New Card</span>
               </label>
             </div>
+
+            {/* Saved Card Selection */}
+            {orderData.payment_method === 'saved_card' && savedPaymentMethods.length > 0 && (
+              <div className={styles['form-group']} style={{ marginTop: '1rem' }}>
+                <label>Select Saved Card</label>
+                <select
+                  value={selectedPaymentId}
+                  onChange={(e) => {
+                    setSelectedPaymentId(e.target.value);
+                    setOrderData(prev => ({ ...prev, payment_method_id: e.target.value }));
+                  }}
+                  className={styles['form-select']}
+                  required
+                >
+                  <option value="">Choose a card</option>
+                  {savedPaymentMethods.map(card => (
+                    <option key={card.id} value={card.id}>
+                      {card.card_type?.toUpperCase()} **** {card.card_number?.slice(-4)} - {card.card_holder_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* New Card Form */}
+            {orderData.payment_method === 'new_card' && (
+              <div className={styles['new-card-form']} style={{ marginTop: '1rem', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                <h4>Card Details</h4>
+                
+                <div className={styles['form-row']}>
+                  <div className={styles['form-group']}>
+                    <label>Card Number *</label>
+                    <input
+                      type="text"
+                      placeholder="1234 5678 9012 3456"
+                      className={styles['form-input']}
+                      maxLength="19"
+                      required
+                    />
+                  </div>
+                  <div className={styles['form-group']}>
+                    <label>CVV *</label>
+                    <input
+                      type="password"
+                      placeholder="123"
+                      className={styles['form-input']}
+                      maxLength="4"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles['form-group']}>
+                  <label>Cardholder Name *</label>
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    className={styles['form-input']}
+                    required
+                  />
+                </div>
+
+                <div className={styles['form-row']}>
+                  <div className={styles['form-group']}>
+                    <label>Expiry Month *</label>
+                    <select className={styles['form-select']} required>
+                      <option value="">Month</option>
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                          {String(i + 1).padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles['form-group']}>
+                    <label>Expiry Year *</label>
+                    <select className={styles['form-select']} required>
+                      <option value="">Year</option>
+                      {[...Array(10)].map((_, i) => {
+                        const year = new Date().getFullYear() + i;
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+                
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+                    <input type="checkbox" />
+                    Save this card for future purchases
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
+
 
           {/* Place Order Button */}
           <div className={styles['checkout-actions']}>

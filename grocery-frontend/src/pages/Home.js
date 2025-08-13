@@ -388,7 +388,7 @@ export default function Home() {
               <h3 className="product-title">{product.name}</h3>
               <p className="product-description">{product.description}</p>
               <p className="product-business">From: {product.business?.name || 'Unknown Business'}</p>
-              <div className="product-price">${product.price}</div>   
+              <div className="product-price">₺{product.price}</div>   
               <button 
                 className="add-to-cart"
                 onClick={() => handleAddToCart(product)}
@@ -606,20 +606,32 @@ export default function Home() {
           ) : (
             <>
               {cart.map((item) => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.name} />
-                  <div className="item-details">
-                    <p><strong>{item.name}</strong></p>
-                    <p>${parseFloat(item.price).toFixed(2)}</p>
-                    <div className="quantity-controls">
-                      <button onClick={() => updateQuantity(item.id, -1)}>-</button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)}>+</button>
-                    </div>
-                    <button className="remove" onClick={() => removeFromCart(item.id)}>Remove</button>
+              <div key={item.id} className="cart-item">
+                <img 
+                  src={
+                    item.image?.startsWith('http') 
+                      ? item.image 
+                      : item.image?.startsWith('products/') 
+                        ? require(`../images/${item.image}`)
+                        : `http://localhost:8000/storage/${item.image}`
+                  }
+                  alt={item.name}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/60x60?text=Product';
+                  }}
+                />
+                <div className="item-details">
+                  <p><strong>{item.name}</strong></p>
+                  <p>${parseFloat(item.price).toFixed(2)}</p>
+                  <div className="quantity-controls">
+                    <button onClick={() => updateQuantity(item.id, -1)}>-</button>
+                    <span>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)}>+</button>
                   </div>
+                  <button className="remove" onClick={() => removeFromCart(item.id)}>Remove</button>
                 </div>
-              ))}
+              </div>
+            ))}
 
               {/* ➕ Subtotal and Checkout */}
               <div className="cart-summary">

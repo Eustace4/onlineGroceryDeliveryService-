@@ -769,3 +769,204 @@ footer {
     font-size: 14px;
   }
 }
+/* Cart UI Enhancements - Add these to your existing CSS */
+
+/* Enhanced Cart Toggle Button */
+
+
+
+
+/* Enhanced Cart Sidebar */
+.cart-sidebar {
+  background: linear-gradient(145deg, #ffffff, #f8f9fb);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+/* Enhanced Cart Header */
+.cart-header {
+  background: linear-gradient(135deg, #4a8f29, #5f5ddf);
+  color: white;
+  padding: 25px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.cart-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cart-header h3::before {
+  
+  margin-right: 10px;
+}
+
+.close-cart {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-cart:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Enhanced Cart Items */
+.cart-item {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.cart-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #4a8f29, #195faf);
+  border-radius: 16px 0 0 16px;
+}
+
+.cart-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.cart-item img {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.cart-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Enhanced Quantity Controls */
+.quantity-controls {
+  background: #f8f9fa;
+  border-radius: 25px;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  width: fit-content;
+}
+
+.quantity-controls:hover {
+  border-color: #294d8f;
+  box-shadow: 0 2px 8px rgba(74, 143, 41, 0.1);
+}
+
+.quantity-controls button {
+  background: linear-gradient(135deg, #4a8f29, #195faf);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(74, 143, 41, 0.2);
+}
+
+.quantity-controls button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(74, 143, 41, 0.3);
+}
+
+.quantity-controls span {
+  font-weight: 700;
+  background: white;
+  border-radius: 20px;
+  padding: 6px 12px;
+  border: 2px solid #e9ecef;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Enhanced Remove Button */
+.remove {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.remove:hover {
+  background: linear-gradient(135deg, #ee5a52, #e74c3c);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+/* Enhanced Cart Summary */
+.cart-summary {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 16px;
+  padding: 25px;
+  border-top: 4px solid #4a8f29;
+  margin-top: 20px;
+}
+
+.cart-summary p {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.cart-summary p::before {
+  
+  margin-right: 8px;
+}
+
+/* Enhanced Checkout Button */
+.checkout-button {
+  background: linear-gradient(135deg, #4a8f29, #195faf);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(74, 143, 41, 0.3);
+  width: 100%;
+}
+
+.checkout-button::before {
+  
+  margin-right: 8px;
+}
+
+.checkout-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(74, 143, 41, 0.4);
+}
+
+.checkout-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
