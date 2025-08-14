@@ -19,6 +19,7 @@ use App\Http\Controllers\BusinessApplicationController;
 use App\Http\Controllers\AdminBusinessApplicationController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\PaymentMethodsController;
+use App\Http\Controllers\API\SupportTicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Add this line inside your Route::prefix('admin/applications')->group(function () {
         Route::get('/{applicationId}/download-storefront/{photoIndex}', [AdminBusinessApplicationController::class, 'downloadStorefrontPhoto'])
             ->name('admin.application.download-storefront-photo');
+            
          // NEW: File viewing routes
         Route::get('/{id}/files', [AdminBusinessApplicationController::class, 'getApplicationFiles']);
         Route::get('/{applicationId}/view/{documentType}', [AdminBusinessApplicationController::class, 'viewDocument'])
@@ -73,6 +75,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [BusinessApplicationController::class, 'show']);
         Route::put('/{id}', [BusinessApplicationController::class, 'update']);
         Route::delete('/{id}', [BusinessApplicationController::class, 'destroy']);
+        // In your business application routes group
+        Route::post('/{id}/resubmit', [BusinessApplicationController::class, 'resubmit']);
     });
     
     // Auth controller routes
@@ -84,6 +88,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']); 
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    // Support Ticket Routes - User routes
+    Route::prefix('user')->group(function () {
+        Route::get('/tickets', [SupportTicketController::class, 'index']);
+        Route::post('/tickets', [SupportTicketController::class, 'store']);
+        Route::get('/tickets/{id}', [SupportTicketController::class, 'show']);
+    });
+
+    // Support Ticket Routes - Admin routes (FIXED)
+    Route::prefix('admin')->group(function () {
+        Route::get('/tickets', [SupportTicketController::class, 'getAllTickets']);
+        Route::get('/tickets/{id}', [SupportTicketController::class, 'show']); // Added this line
+        Route::post('/tickets/{id}/respond', [SupportTicketController::class, 'respondToTicket']);
+        Route::put('/tickets/{id}/status', [SupportTicketController::class, 'updateStatus']); // Fixed this line
+    });
 
     // Product controller routes
     Route::get('/products/{id}', [ProductController::class, 'show']);

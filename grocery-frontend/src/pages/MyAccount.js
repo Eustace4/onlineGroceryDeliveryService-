@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaUser, 
   FaBox, 
@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaCreditCard,
   FaPlus,
+  FaQuestionCircle ,
   FaTrash
 
 } from 'react-icons/fa';
@@ -104,8 +105,26 @@ const MyAccount = () => {
     onConfirm: null
   });
 
+  const [tickets, setTickets] = useState([]);
+  const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [newTicket, setNewTicket] = useState({
+    subject: '',
+    type: 'general',
+    priority: 'medium',
+    description: ''
+  });
+
 
   const userIdRef = useRef(null);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    // Handle navigation state for setting active tab
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   const token = localStorage.getItem('auth_token');
   const authUser = JSON.parse(localStorage.getItem('auth_user'));
@@ -142,6 +161,12 @@ const MyAccount = () => {
         setLoading(false);
       });
   }, [navigate, token]);
+
+  useEffect(() => {
+    if (activeTab === 'support' && token) {
+      fetchUserTickets();
+    }
+  }, [activeTab, token]);
 
   // Event handlers
   const handleLogout = () => {
@@ -248,6 +273,86 @@ const MyAccount = () => {
     // Add spaces every 4 digits
     return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
   };
+
+  const fetchUserTickets = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/user/tickets', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTickets(Array.isArray(data) ? data : data.data || []);
+      } else {
+        showNotification('error', 'Error', 'Failed to fetch tickets');
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      showNotification('error', 'Network Error', 'Unable to connect to server');
+    }
+  };
+
+  const handleCreateTicket = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/user/tickets', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(newTicket),
+      });
+
+      if (response.ok) {
+        const createdTicket = await response.json();
+        setTickets(prev => [createdTicket, ...prev]);
+        setShowCreateTicket(false);
+        setNewTicket({
+          subject: '',
+          type: 'general',
+          priority: 'medium',
+          description: ''
+        });
+        showNotification('success', 'Success', 'Your ticket has been submitted successfully!');
+      } else {
+        const errorData = await response.json();
+        showNotification('error', 'Error', errorData.message || 'Failed to create ticket');
+      }
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      showNotification('error', 'Network Error', 'Unable to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open': return '#3b82f6';
+      case 'in_progress': return '#f59e0b';
+      case 'resolved': return '#10b981';
+      case 'closed': return '#6b7280';
+      default: return '#6b7280';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return '#ef4444';
+      case 'medium': return '#f59e0b';
+      case 'low': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+
 
   // Add new payment method
   const handleAddCard = async (e) => {
@@ -567,6 +672,12 @@ const MyAccount = () => {
             className={`${styles.navItem} ${activeTab === 'payments' ? styles.active : ''}`}
           >
             <FaCreditCard /> Payment Methods
+          </button>
+          <button 
+            onClick={() => setActiveTab('support')} 
+            className={`${styles.navItem} ${activeTab === 'support' ? styles.active : ''}`}
+          >
+            <FaQuestionCircle /> Support
           </button>
         </nav>
 
@@ -958,6 +1069,179 @@ const MyAccount = () => {
                   </form>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'support' && (
+          <div className={styles.tabContent}>
+            <div className={styles.profileHeader}>
+              <div className={styles.profileInfo}>
+                <h2>Customer Support</h2>
+                <p className={styles.profileSubtitle}>
+                  Have a complaint or need help? We're here to assist you!
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.formSection}>
+              <div className={styles.sectionHeader}>
+                <h3>Support Tickets</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTicket(!showCreateTicket)}
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                >
+                  <FaPlus /> Create New Ticket
+                </button>
+              </div>
+
+              {/* Create Ticket Form */}
+              {showCreateTicket && (
+                <div className={styles.formSection}>
+                  <h4>Submit a New Ticket</h4>
+                  <form className={styles.modernForm} onSubmit={handleCreateTicket}>
+                    <div className={styles.formGroup}>
+                      <label>Subject</label>
+                      <input
+                        type="text"
+                        value={newTicket.subject}
+                        onChange={(e) => setNewTicket(prev => ({ ...prev, subject: e.target.value }))}
+                        placeholder="Brief description of your issue"
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div className={styles.formGroup} style={{ flex: 1 }}>
+                        <label>Category</label>
+                        <select
+                          value={newTicket.type}
+                          onChange={(e) => setNewTicket(prev => ({ ...prev, type: e.target.value }))}
+                          className={styles.customSelect}
+                        >
+                          <option value="general">General Inquiry</option>
+                          <option value="payment">Payment Issue</option>
+                          <option value="delivery">Delivery Problem</option>
+                          <option value="account">Account Issue</option>
+                          <option value="technical">Technical Problem</option>
+                          <option value="complaint">Complaint</option>
+                          <option value="refund">Refund Request</option>
+                        </select>
+                      </div>
+
+                      <div className={styles.formGroup} style={{ flex: 1 }}>
+                        <label>Priority</label>
+                        <select
+                          value={newTicket.priority}
+                          onChange={(e) => setNewTicket(prev => ({ ...prev, priority: e.target.value }))}
+                          className={styles.customSelect}
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Description</label>
+                      <textarea
+                        value={newTicket.description}
+                        onChange={(e) => setNewTicket(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Please provide detailed information about your issue..."
+                        rows="5"
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        type="submit"
+                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Submitting...' : 'Submit Ticket'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateTicket(false);
+                          setNewTicket({
+                            subject: '',
+                            type: 'general',
+                            priority: 'medium',
+                            description: ''
+                          });
+                        }}
+                        className={`${styles.btn} ${styles.btnDanger}`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Tickets List */}
+              <div className={styles.ticketsContainer}>
+                {tickets.length === 0 ? (
+                  <div className={styles.emptyState}>
+                    <FaQuestionCircle className={styles.emptyIcon} />
+                    <h3>No Support Tickets</h3>
+                    <p>You haven't submitted any support tickets yet. Click "Create New Ticket" to get help with any issues.</p>
+                  </div>
+                ) : (
+                  <div className={styles.ticketsList}>
+                    {tickets.map(ticket => (
+                      <div key={ticket.id} className={styles.ticketCard}>
+                        <div className={styles.ticketHeader}>
+                          <div className={styles.ticketTitle}>
+                            <h4>#{ticket.id} - {ticket.subject}</h4>
+                            <div className={styles.ticketMeta}>
+                              <span 
+                                className={styles.statusBadge}
+                                style={{ backgroundColor: getStatusColor(ticket.status) }}
+                              >
+                                {ticket.status.replace('_', ' ').toUpperCase()}
+                              </span>
+                              <span 
+                                className={styles.priorityBadge}
+                                style={{ backgroundColor: getPriorityColor(ticket.priority) }}
+                              >
+                                {ticket.priority.toUpperCase()}
+                              </span>
+                              <span className={styles.typeBadge}>
+                                {ticket.type.replace('_', ' ').toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className={styles.ticketDate}>
+                            Created: {new Date(ticket.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        
+                        <div className={styles.ticketDescription}>
+                          {ticket.description}
+                        </div>
+
+                        {ticket.admin_response && (
+                          <div className={styles.adminResponse}>
+                            <strong>Admin Response:</strong>
+                            <p>{ticket.admin_response}</p>
+                          </div>
+                        )}
+
+                        <div className={styles.ticketActions}>
+                          <span className={styles.lastUpdate}>
+                            Last updated: {new Date(ticket.updated_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

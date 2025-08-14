@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft,
   Upload,
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import styles from './BusinessApplication.module.css';
 
-const BusinessApplication = ({ onBack, onComplete }) => {
+const BusinessApplication = ({ onBack, onComplete, applicationToEdit }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -38,6 +38,20 @@ const BusinessApplication = ({ onBack, onComplete }) => {
     addressProof: null,
     storefrontPhotos: [] // required, min 2, max 5
   });
+
+  useEffect(() => {
+    if (applicationToEdit) {
+      setFormData(prev => ({
+        ...prev,
+        businessName: applicationToEdit.businessName || applicationToEdit.name || '',
+        businessEmail: applicationToEdit.businessEmail || applicationToEdit.email || '',
+        phoneNumber: applicationToEdit.phoneNumber || applicationToEdit.phone || '',
+        countryCode: applicationToEdit.countryCode || '+90',
+        businessAddress: applicationToEdit.businessAddress || applicationToEdit.address || '',
+        // You can add other fields here if needed
+      }));
+    }
+  }, [applicationToEdit]);
 
   const fileInputRefs = {
     businessLogo: useRef(null),
@@ -412,7 +426,7 @@ const BusinessApplication = ({ onBack, onComplete }) => {
         <div className={`${styles['phone-input-wrapper']} ${(errors.countryCode || errors.phoneNumber) ? styles.error : ''}`}>
           <div className={styles['country-selector']} onClick={() => setShowCountryDropdown(!showCountryDropdown)}>
             <span className={styles['selected-country']}>
-              <FlagDisplay country={selectedCountry} />
+              <FlagDisplay country={selectedCountry || { name: '', flag: '', iso: '' }} />
               <span>{selectedCountry?.code}</span>
             </span>
             <ChevronDown size={16} />

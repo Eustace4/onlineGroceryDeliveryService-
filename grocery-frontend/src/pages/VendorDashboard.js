@@ -16,6 +16,8 @@ import BusinessApplication from './BusinessApplication';
 import ApplicationsManager from '../components/ApplicationsManager';
 import VendorSettings from '../components/VendorSettings';
 import CustomerSection from '../components/CustomerSection'
+import VendorTicket from '../components/VendorTicket';
+
 
 
 
@@ -28,6 +30,7 @@ const VendorDashboard = ({ token: propToken }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [businesses, setBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [editingApplication, setEditingApplication] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -43,6 +46,7 @@ const VendorDashboard = ({ token: propToken }) => {
   const [users, setUsers] = useState([]);
   const [showBusinessApplication, setShowBusinessApplication] = useState(false);
   const [notification, setNotification] = useState({ message: '', type: '' });
+  
   const [confirmModal, setConfirmModal] = useState({
     show: false,
     type: '',   // 'product' or 'business'
@@ -496,12 +500,12 @@ const VendorDashboard = ({ token: propToken }) => {
         >
           <FileText /> Applications
         </button>
-        <button
+        {/*<button
           onClick={() => setActiveTab("messages")}
           className={`${styles["nav-item"]} ${activeTab === "messages" ? styles.active : ""}`}
         >
           <MessageSquare /> Messages
-        </button>
+        </button>*/}
         <button
           onClick={() => setActiveTab("settings")}
           className={`${styles["nav-item"]} ${activeTab === "settings" ? styles.active : ""}`}
@@ -523,10 +527,14 @@ const VendorDashboard = ({ token: propToken }) => {
     <main className={styles["myaccount-content"]}>
       {showBusinessApplication ? (
         <BusinessApplication 
-          onBack={() => setShowBusinessApplication(false)}
+          onBack={() => {
+            setShowBusinessApplication(false);
+            setEditingApplication(null);
+          }}
+          applicationToEdit={editingApplication}
           onComplete={() => {
             setShowBusinessApplication(false);
-            // Refresh businesses list or show success message
+            setEditingApplication(null);
           }}
         />
       ) : (
@@ -552,7 +560,10 @@ const VendorDashboard = ({ token: propToken }) => {
             <div className={styles["tab-content"]}>
               <ApplicationsManager 
                 token={token}
-                onNewApplication={() => setShowBusinessApplication(true)}
+                onNewApplication={(applicationToEdit = null) => {
+                  setEditingApplication(applicationToEdit);
+                  setShowBusinessApplication(true);
+                }}
               />
             </div>
           )}
@@ -999,15 +1010,16 @@ const VendorDashboard = ({ token: propToken }) => {
           )}
 
           {activeTab === "settings" && <VendorSettings token={token} />}
+          
 
           {activeTab === "customers" && <CustomerSection token={token} selectedBusiness={selectedBusiness} />}
 
 
-          {["messages"].includes(activeTab) && (
+          {/*{["messages"].includes(activeTab) && (
             <div className={styles["tab-content"]}>
               <h2 style={{ textTransform: "capitalize" }}>{activeTab} section coming soon...</h2>
             </div>
-          )}
+          )}*/}
 
 
           {showBusinessModal && (

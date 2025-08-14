@@ -135,8 +135,11 @@ export default function AdminDashboard() {
   const [filesLoading, setFilesLoading] = useState(false);
   const [viewingFile, setViewingFile] = useState(null);
   const [fileModalType, setFileModalType] = useState(''); 
+  const [userTickets, setUserTickets] = useState([]);
+  const [selectedUserTicket, setSelectedUserTicket] = useState(null);
+  const [ticketResponse, setTicketResponse] = useState('');
 
-  // User Management Functions
+    // User Management Functions
   const [viewedUser, setViewedUser] = useState(null);
 
   const handleViewUser = (user) => {
@@ -182,10 +185,12 @@ export default function AdminDashboard() {
         apiRequest('/categories'),
         apiRequest('/products'),
         apiRequest('/admin/applications/all'),
-        apiRequest('/admin/applications/stats')
+        apiRequest('/admin/applications/stats'),
+        apiRequest('/admin/tickets')
+        
       ]);
 
-      const [usersRes, businessesRes, categoriesRes, productsRes, applicationsRes, statsRes] = results;
+      const [usersRes, businessesRes, categoriesRes, productsRes, applicationsRes, statsRes, ticketsRes] = results;
 
       console.log('📊 API Results:');
       console.log('Users:', usersRes.status);
@@ -194,6 +199,15 @@ export default function AdminDashboard() {
       console.log('Products:', productsRes.status);
       console.log('Applications:', applicationsRes.status);
       console.log('Stats:', statsRes.status);
+
+      // Handle tickets
+      if (ticketsRes.status === 'fulfilled') {
+        console.log('✅ Tickets loaded:', ticketsRes.value);
+        setUserTickets(ticketsRes.value);
+      } else {
+        console.error('❌ Tickets failed:', ticketsRes.reason);
+        setUserTickets([]);
+      }
 
       // Handle applications specifically
       if (applicationsRes.status === 'fulfilled') {
@@ -238,6 +252,37 @@ export default function AdminDashboard() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     navigate('/login');
+  };
+
+  const handleViewUserTicket = (ticket) => {
+    setSelectedUserTicket(ticket);
+    setModalType('viewUserTicket');
+    setShowModal(true);
+  };
+
+  const handleRespondToTicket = async (ticketId) => {
+    if (!ticketResponse.trim()) {
+      alert('Please enter a response');
+      return;
+    }
+
+    try {
+      await apiRequest(`/admin/tickets/${ticketId}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          response: ticketResponse,
+          status: 'resolved' // or keep current status
+        })
+      });
+      
+      // Refresh tickets
+      fetchDashboardData();
+      setShowModal(false);
+      setTicketResponse('');
+    } catch (error) {
+      console.error('Error responding to ticket:', error);
+      alert('Failed to send response');
+    }
   };
 
   const handleViewApplication = async (application) => {
@@ -401,6 +446,25 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error approving application:', error);
       alert('Failed to approve application');
+    }
+  };
+
+  const handleUpdateTicketStatus = async (ticketId, newStatus) => {
+    try {
+      await apiRequest(`/admin/tickets/${ticketId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      // Update the ticket in state
+      setUserTickets(userTickets.map(ticket => 
+        ticket.id === ticketId 
+          ? { ...ticket, status: newStatus }
+          : ticket
+      ));
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      alert('Failed to update ticket status');
     }
   };
 
@@ -1401,15 +1465,17 @@ export default function AdminDashboard() {
       case 'Ticket System':
         return (
           <div className="ticket-system-section">
-            <TicketSystem />
+            <TicketSystem 
+              tickets={userTickets}
+              onViewTicket={handleViewUserTicket}
+              onUpdateTicketStatus={handleUpdateTicketStatus}
+            />
           </div>
         );
-      default:
-        return renderDashboard();
-    }
-  };
-
-  
+        default:
+          return renderDashboard();
+      }
+    };
 
   // Modal rendering function
   // Modal rendering function - FIXED VERSION
@@ -1919,6 +1985,75 @@ export default function AdminDashboard() {
             </div>
             <div className="modal-footer">
               <button className="btn-cancel" onClick={closeModal}>Close</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (modalType === 'viewUserTicket' && selectedUserTicket) {
+      return (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>User Ticket #{selectedUserTicket.id}</h3>
+              <button className="modal-close" onClick={closeModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div><strong>Subject:</strong> {selectedUserTicket.subject}</div>
+              <div><strong>User:</strong> {selectedUserTicket.user?.name}</div>
+              <div><strong>Email:</strong> {selectedUserTicket.user?.email}</div>
+              <div><strong>Type:</strong> {selectedUserTicket.type}</div>
+              <div><strong>Priority:</strong> {selectedUserTicket.priority}</div>
+              <div><strong>Status:</strong> 
+                <span className={`status-badge ${selectedUserTicket.status}`}>
+                  {selectedUserTicket.status}
+                </span>
+              </div>
+              <div><strong>Created:</strong> {new Date(selectedUserTicket.created_at).toLocaleString()}</div>
+              
+              <div style={{marginTop: '20px'}}>
+                <strong>Description:</strong>
+                <p style={{background: '#f5f5f5', padding: '10px', borderRadius: '4px', marginTop: '5px'}}>
+                  {selectedUserTicket.description}
+                </p>
+              </div>
+
+              {selectedUserTicket.admin_response && (
+                <div style={{marginTop: '20px'}}>
+                  <strong>Previous Response:</strong>
+                  <p style={{background: '#e8f5e8', padding: '10px', borderRadius: '4px', marginTop: '5px'}}>
+                    {selectedUserTicket.admin_response}
+                  </p>
+                </div>
+              )}
+
+              {selectedUserTicket.status !== 'closed' && (
+                <div style={{marginTop: '20px'}}>
+                  <label><strong>Admin Response:</strong></label>
+                  <textarea
+                    value={ticketResponse}
+                    onChange={(e) => setTicketResponse(e.target.value)}
+                    placeholder="Type your response to the user..."
+                    rows="4"
+                    style={{width: '100%', marginTop: '5px'}}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              {selectedUserTicket.status !== 'closed' ? (
+                <button 
+                  className="btn-approve" 
+                  onClick={() => handleRespondToTicket(selectedUserTicket.id)}
+                >
+                  Send Response & Resolve
+                </button>
+              ) : (
+                <button className="btn-cancel" onClick={closeModal}>
+                  Close
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,8 +1,16 @@
-[2025-08-13 23:49:24] local.INFO: Fetching payment methods for user: 12  
-[2025-08-13 23:49:24] local.INFO: Found 1 payment methods for user: 12  
-[2025-08-13 23:49:25] local.INFO: Fetching payment methods for user: 12  
-[2025-08-13 23:49:25] local.INFO: Found 1 payment methods for user: 12  
-[2025-08-13 23:49:52] local.INFO: Fetching payment methods for user: 12  
-[2025-08-13 23:49:52] local.INFO: Found 1 payment methods for user: 12  
-[2025-08-13 23:49:53] local.INFO: Fetching payment methods for user: 12  
-[2025-08-13 23:49:53] local.INFO: Found 1 payment methods for user: 12  
+[2025-08-14 11:12:57] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 11:12:59] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 11:13:00] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 11:13:00] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 11:54:28] local.INFO: Fetching payment methods for user: 12  
+[2025-08-14 11:54:28] local.INFO: Found 1 payment methods for user: 12  
+[2025-08-14 11:54:29] local.INFO: Fetching payment methods for user: 12  
+[2025-08-14 11:54:29] local.INFO: Found 1 payment methods for user: 12  
+[2025-08-14 12:01:36] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:01:38] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:01:39] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:01:39] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:12:07] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:12:09] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:12:10] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 
+[2025-08-14 12:12:10] local.INFO: Applications fetched successfully {"count":9,"user_id":2,"user_role":"admin"} 

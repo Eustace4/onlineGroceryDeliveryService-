@@ -117,29 +117,9 @@ const ApplicationsManager = ({ token, onNewApplication }) => {
     setShowDetails(true);
   };
 
-  const handleResubmit = async (applicationId) => {
-    try {
-      const res = await fetch(`/api/business-applications/${applicationId}/resubmit`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        }
-      });
-
-      if (!res.ok) throw new Error('Failed to resubmit application');
-      
-      setNotification({ 
-        message: 'Application resubmitted successfully!', 
-        type: 'success' 
-      });
-      fetchApplications();
-    } catch (error) {
-      setNotification({ 
-        message: 'Failed to resubmit application', 
-        type: 'error' 
-      });
-    }
+  const handleResubmit = (application) => {
+    // Pass the application data for editing
+    onNewApplication(application);
   };
 
   return (
@@ -327,7 +307,7 @@ const ApplicationsManager = ({ token, onNewApplication }) => {
                   {application.status === 'rejected' && (
                     <button
                       className={`${styles.actionBtn} ${styles.resubmitBtn}`}
-                      onClick={() => handleResubmit(application.id)}
+                      onClick={() => handleResubmit(application)}
                     >
                       <RefreshCw size={16} />
                       Resubmit

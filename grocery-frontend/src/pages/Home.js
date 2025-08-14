@@ -202,7 +202,7 @@ export default function Home() {
             <span className="search-icon" onClick={() => setShowSearch(!showSearch)}>
               <FaSearch />
             </span>
-            <a href="/wishlist">Wishlist</a>
+            <Link to="/my-account" state={{ activeTab: 'wishlist' }}>Wishlist</Link>
             <div className="cart-toggle" onClick={() => setIsCartOpen(!isCartOpen)}>
               Cart ({cartCount})
             </div>
