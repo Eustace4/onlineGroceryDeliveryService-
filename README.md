@@ -17,9 +17,7 @@ A web-based grocery delivery platform designed to make it easier for users—esp
 -  Order tracking with status updates
 -  Feedback form for user reviews
 
-## Contributing
-Pull requests are welcome!  
-Please open an issue first to discuss what you'd like to change or improve.
+
 
 ## License
 This project is licensed under the MIT License.
